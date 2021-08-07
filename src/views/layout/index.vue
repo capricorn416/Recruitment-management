@@ -5,7 +5,7 @@
         <img src="~assets/logo.png" width="40px">
         <span class="cascader">
           <el-cascader
-          v-model="value"
+          v-model="time"
           :options="options"
           separator = '-'
           @change="handleChange"></el-cascader>
@@ -18,11 +18,23 @@
 
         <el-main>
           <h1>本次招新数据</h1>
-          <el-button v-for="(group, index) in groups" :key="index" class="group-button" :class="colors[index]">
-            <h2>{{ group.name }}</h2>
-            <p>{{ group.number }}</p>
-          </el-button>
+          <!-- 所有候选人 -->
+          <div v-if="check ===  0">
+            <el-button v-for="(group, index) in groups" :key="index"
+             class="group-button" :class="colors[index]" @click="getStage(index)">
+              <h2>{{ group.title }}</h2>
+              <p>{{ group.count }}</p>
+            </el-button>
+          </div>
 
+          <!-- 切换到对应组别下的流程 -->
+          <div v-if="check ===  1">
+            <el-button v-for="(theme, index) in themes" :key="index"
+             class="group-button" :class="colors[index]">
+              <h2>{{ theme.theme }}</h2>
+              <p>{{ theme.count }}</p>
+            </el-button>
+          </div>
           <!-- <el-button>流程编辑</el-button> -->
 
           <el-card class="table">
@@ -40,21 +52,21 @@
               <el-table-column
                 prop="sex"
                 label="性别" width="70">
-                 <template slot-scope="scope">
-                  <v-icon v-if="scope.row.sex === '男'" color="#17ABE3">mdi-gender-male</v-icon>
+                <template slot-scope="scope">
+                  <v-icon v-if="scope.row.sex === 2" color="#17ABE3">mdi-gender-male</v-icon>
                   <v-icon v-else color="#F27BA4">mdi-gender-female</v-icon>
                 </template>
               </el-table-column>
               <el-table-column
                 prop="grade"
-                label="年级" width="70">
+                label="年级" width="70" :formatter="gradeCheck">
               </el-table-column>
               <el-table-column
-                prop="group"
+                prop="team"
                 label="组别" width="80">
               </el-table-column>
               <el-table-column
-                prop="procedure"
+                prop="stage"
                 label="流程" width="70">
               </el-table-column>
               <el-table-column
@@ -63,17 +75,18 @@
                 width="160">
               </el-table-column>
               <el-table-column
-                prop="qq"
+                prop="qq_number"
                 label="QQ"
                 width="120">
               </el-table-column>
               <el-table-column
-                prop="phone"
+                prop="phone_number"
                 label="电话"
                 width="120">
               </el-table-column>
               <el-table-column
-                label="报名材料">
+                label="报名材料"
+                prop="work_url">
                 <v-icon class="download">mdi-download</v-icon>
               </el-table-column>
             </el-table>
@@ -85,40 +98,45 @@
 </template>
 
 <script>
+import { getGroupCount, getStageCount, getCandidate } from '@/api/getInfo.js'
+
 export default {
   name: 'LayoutIndex',
   components: {},
   data() {
     return {
+      check: 0,
       groups: [{
-        name: '产品组',
-        number: 94
+        title: '产品组',
+        count: 0
       },
       {
-        name: '运营组',
-        number: 94
+        title: '运营组',
+        count: 0
       },
       {
-        name: '设计组',
-        number: 94
+        title: '设计组',
+        count: 0
       },
       {
-        name: '前端组',
-        number: 94
+        title: '前端组',
+        count: 0
       },
       {
-        name: '后端组',
-        number: 94
+        title: '后端组',
+        count: 0
       },
       {
-        name: '移动组',
-        number: 94
+        title: '移动组',
+        count: 0
       }],
+      themes: [],
+      grades: ['大一','大二','大三','大四','研一','研二','研五'],
       colors: ['color1', 'color2', 'color3', 'color4', 'color5', 'color6'],
-      value: ['2020', 'Spring'],
+      time: ['2021', 'Autumn'],
       options: [{
-        value: '2020',
-        label: '2020',
+        value: '2021',
+        label: '2021',
         children: [{
           value: 'Spring',
           label: 'Spring',
@@ -129,8 +147,8 @@ export default {
         }]
       },
       {
-        value: '2020',
-        label: '2020',
+        value: '2022',
+        label: '2022',
         children: [{
           value: 'Spring',
           label: 'Spring',
@@ -141,8 +159,8 @@ export default {
         }]
       },
       {
-        value: '2020',
-        label: '2020',
+        value: '2023',
+        label: '2023',
         children: [{
           value: 'Spring',
           label: 'Spring',
@@ -153,8 +171,8 @@ export default {
         }]
       },
       {
-        value: '2020',
-        label: '2020',
+        value: '2024',
+        label: '2024',
         children: [{
           value: 'Spring',
           label: 'Spring',
@@ -165,8 +183,8 @@ export default {
         }]
       },
       {
-        value: '2020',
-        label: '2020',
+        value: '2025',
+        label: '2025',
         children: [{
           value: 'Spring',
           label: 'Spring',
@@ -177,8 +195,8 @@ export default {
         }]
       },
       {
-        value: '2020',
-        label: '2020',
+        value: '2026',
+        label: '2026',
         children: [{
           value: 'Spring',
           label: 'Spring',
@@ -188,33 +206,79 @@ export default {
           label: 'Autumn'
         }]
       }
-      ],
-      tableData: [{
-            name: '王小虎',
-            sex: '男',
-            qq: 1074042379,
-            major: '生物信息',
-            grade: '大二',
-            group: '前端组',
-            procedure: '笔试',
-            phone: 13566381148
-          },
-          {
-            name: '王小虎',
-            sex: '女',
-            qq: 1074042379,
-            major: '生物信息11111111111111111111111',
-            grade: '大二',
-            group: '前端组',
-            procedure: '笔试',
-            phone: 13566381148
-          }]
+      ]
     }
   },
   methods: {
+    // 切换时间
     handleChange() {
-      console.log(this.value)
+      this.getGroupInfo();
+      this.getCandidateInfo(-1, "")
+    },
+    // 切换组别
+    getStage(index) {
+      this.check = 1;
+      index ++; 
+      this.getStageInfo(index);
+      this.getCandidateInfo(index, "")
+    },
+
+    // 获取各组别及人数
+    getGroupInfo() {
+      let time = {
+        "year": this.time[0],
+        "season": this.time[1] 
+      }
+      getGroupCount(time
+      ).then((res) => {
+        // console.log(res.data.msg)
+        this.groups = res.data.msg
+      }).catch((err) => {
+        console.log(err.response.data)
+      });
+    },
+
+    // 获取各阶段及人数
+    getStageInfo(index) {
+      let group = {
+        "year": this.time[0],
+        "season": this.time[1],
+        "group": index
+      }
+      getStageCount(group).then((res) => {
+        // console.log(res.data.msg)
+        this.themes = res.data.msg
+      }).catch((err) => {
+        console.log(err.response.data)
+      });
+    },
+
+    // 获得候选人信息
+    getCandidateInfo(groupIndex, stageInfo) {
+      let params = {
+        "year": this.time[0],
+        "season": this.time[1],
+        "group": groupIndex,
+        "page_size": 10,
+        "page_num": 0,
+        "stage": stageInfo
+      }
+      getCandidate(params).then((res) => {
+        // console.log(res.data.msg);
+        this.tableData = res.data.msg
+      }).catch((err) => {
+        console.log(err.response.data);
+      });
+    },
+
+    // 渲染年级
+    gradeCheck(row, column) {
+      return this.grades[row.grade-1]
     }
+  },
+  created() {
+    this.getGroupInfo()
+    this.getCandidateInfo(-1, "")
   }
 }
 </script>
