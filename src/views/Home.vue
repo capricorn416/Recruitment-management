@@ -2,6 +2,14 @@
   <div>
     <button @click="sendVerifyCode">获取验证码</button>
     <button @click="signIn">登录</button>
+
+            <div class="block">
+              <el-pagination
+                layout="prev, pager, next"
+                :total="500">
+              </el-pagination>
+            </div>
+
   </div>
 </template>
 
@@ -15,10 +23,14 @@ import { sendVerifyCode, signIn } from '@/api/login.js'
     data() {
       return {
         phone_number: 18357422510,
-        verification_code: '080703'
+        verification_code: '080703',
+
       }
     },
     methods: {
+      handleSelect(index, indexPath) {
+        console.log(index, indexPath);
+      },
       sendVerifyCode() {
         var formData = new FormData();
         formData.append('phone_number', this.phone_number);

@@ -2,18 +2,30 @@
   <div>
     <el-container>
       <el-header height="114px" class="head-bar">
+        <div class="head-bar_left">
         <img src="~assets/logo.png" width="40px">
-        <span class="cascader">
+        <!-- <span class="cascader">
           <el-cascader
           v-model="time"
           :options="options"
           separator = '-'
           @change="handleChange"></el-cascader>
-        </span>
+        </span> -->
+        <p>{{ time.join('-') }}</p>
+        <el-menu mode="horizontal" @select="handleSelect">
+          <el-submenu class="sub">
+            <el-submenu :index="item.label" v-for="(item, i) in years" :key="i">
+              <template slot="title">{{item.label}}</template>
+              <el-menu-item :index="season[0]">Spring</el-menu-item>
+              <el-menu-item :index="season[1]">Autumn</el-menu-item>
+            </el-submenu>
+          </el-submenu>
+        </el-menu>
+        </div>
       </el-header>
 
       <el-container>
-        <el-aside width="350px">
+        <el-aside width="300px">
         </el-aside>
 
         <el-main>
@@ -28,14 +40,23 @@
           </div>
 
           <!-- 切换到对应组别下的流程 -->
-          <div v-if="check ===  1">
-            <el-button v-for="(theme, index) in themes" :key="index"
-             class="group-button" :class="colors[index]">
+          <div v-if="check ===  1" class="procedure">
+            <el-button v-for="(theme, index) in themes" :key="index" v-show="index<=max && index>=min"
+             class="group-button" :class="colors[index]" >
               <h2>{{ theme.theme }}</h2>
               <p>{{ theme.count }}</p>
             </el-button>
+            <el-pagination
+              layout="prev, next"
+              class="procedure-switch"
+              @next-click="nextItem"
+              @prev-click="preItem"
+              :page-count="themes.length-5"
+            >
+            </el-pagination>
+            <el-button class="procedure-edit">流程编辑</el-button>
           </div>
-          <!-- <el-button>流程编辑</el-button> -->
+          
 
           <el-card class="table">
             <el-table
@@ -90,6 +111,13 @@
                 <v-icon class="download">mdi-download</v-icon>
               </el-table-column>
             </el-table>
+
+            <div class="block">
+              <el-pagination
+                layout="prev, pager, next"
+                :page-count="5">
+              </el-pagination>
+            </div>
           </el-card>
         </el-main>
       </el-container>
@@ -106,6 +134,8 @@ export default {
   data() {
     return {
       check: 0,
+      max: 5,
+      min: 0,
       groups: [{
         title: '产品组',
         count: 0
@@ -134,84 +164,121 @@ export default {
       grades: ['大一','大二','大三','大四','研一','研二','研五'],
       colors: ['color1', 'color2', 'color3', 'color4', 'color5', 'color6'],
       time: ['2021', 'Autumn'],
-      options: [{
-        value: '2021',
-        label: '2021',
-        children: [{
-          value: 'Spring',
-          label: 'Spring',
-        },
-        {
-          value: 'Autumn',
-          label: 'Autumn'
-        }]
+      // options: [{
+      //   value: '2021',
+      //   label: '2021',
+      //   children: [{
+      //     value: 'Spring',
+      //     label: 'Spring',
+      //   },
+      //   {
+      //     value: 'Autumn',
+      //     label: 'Autumn'
+      //   }]
+      // },
+      // {
+      //   value: '2022',
+      //   label: '2022',
+      //   children: [{
+      //     value: 'Spring',
+      //     label: 'Spring',
+      //   },
+      //   {
+      //     value: 'Autumn',
+      //     label: 'Autumn'
+      //   }]
+      // },
+      // {
+      //   value: '2023',
+      //   label: '2023',
+      //   children: [{
+      //     value: 'Spring',
+      //     label: 'Spring',
+      //   },
+      //   {
+      //     value: 'Autumn',
+      //     label: 'Autumn'
+      //   }]
+      // },
+      // {
+      //   value: '2024',
+      //   label: '2024',
+      //   children: [{
+      //     value: 'Spring',
+      //     label: 'Spring',
+      //   },
+      //   {
+      //     value: 'Autumn',
+      //     label: 'Autumn'
+      //   }]
+      // },
+      // {
+      //   value: '2025',
+      //   label: '2025',
+      //   children: [{
+      //     value: 'Spring',
+      //     label: 'Spring',
+      //   },
+      //   {
+      //     value: 'Autumn',
+      //     label: 'Autumn'
+      //   }]
+      // },
+      // {
+      //   value: '2026',
+      //   label: '2026',
+      //   children: [{
+      //     value: 'Spring',
+      //     label: 'Spring',
+      //   },
+      //   {
+      //     value: 'Autumn',
+      //     label: 'Autumn'
+      //   }]
+      // }
+      // ],
+      tableData:[],
+      years: [{
+        label: '2021'
       },
       {
-        value: '2022',
-        label: '2022',
-        children: [{
-          value: 'Spring',
-          label: 'Spring',
-        },
-        {
-          value: 'Autumn',
-          label: 'Autumn'
-        }]
+        label: '2022'
       },
       {
-        value: '2023',
-        label: '2023',
-        children: [{
-          value: 'Spring',
-          label: 'Spring',
-        },
-        {
-          value: 'Autumn',
-          label: 'Autumn'
-        }]
+        label: '2023'
       },
       {
-        value: '2024',
-        label: '2024',
-        children: [{
-          value: 'Spring',
-          label: 'Spring',
-        },
-        {
-          value: 'Autumn',
-          label: 'Autumn'
-        }]
+        label: '2024'
       },
       {
-        value: '2025',
-        label: '2025',
-        children: [{
-          value: 'Spring',
-          label: 'Spring',
-        },
-        {
-          value: 'Autumn',
-          label: 'Autumn'
-        }]
+        label: '2025'
       },
       {
-        value: '2026',
-        label: '2026',
-        children: [{
-          value: 'Spring',
-          label: 'Spring',
-        },
-        {
-          value: 'Autumn',
-          label: 'Autumn'
-        }]
-      }
-      ]
+        label: '2026'
+      },
+      {
+        label: '2027'
+      }],
+      season: ['Spring', 'Autumn']
     }
   },
   methods: {
     // 切换时间
-    handleChange() {
+    // handleChange() {
+    //   this.getGroupInfo();
+    //   this.getCandidateInfo(-1, "")
+    // },
+    nextItem() {
+      this.max++;
+      this.min++;
+    },
+    preItem() {
+      this.max--;
+      this.min--;
+    },
+    handleSelect(index, indexPath) {
+      this.time[0] = indexPath[0];
+      this.time[1] = indexPath[1];
       this.getGroupInfo();
       this.getCandidateInfo(-1, "")
     },
@@ -287,18 +354,24 @@ export default {
 .head-bar {
   border-bottom: 1px solid #8D8D8D;
   padding: 0 !important;
+  .head-bar_left {
+    display: flex;
+    align-items: center;
+  }
+
   img {
-    margin-top: 12px;
+    margin-top: 8px;
     margin-left: 16px;
   }
-  .el-input {
-    width: 210px;
-  }
-  .el-cascader {
-    left: 10px;
-    top: -10px;
-  }
-  .el-input__inner {
+  // .el-input {
+  //   width: 210px;
+  // }
+  // .el-cascader {
+  //   left: 10px;
+  //   top: -10px;
+  // }
+  p {
+    display: inline;
     border: none !important;
     font-family: Racing Sans One;
     font-style: normal;
@@ -307,24 +380,54 @@ export default {
     line-height: 28px;
     letter-spacing: 0.15px;
     color: #5E6366;
+    margin-left: 16px;
+    position: relative;
+    top: 12px;
   }
-  .el-input__icon {
-    color: #5E6366;
+  .el-menu.el-menu--horizontal {
+    border-bottom: none;
+    padding: 0;
+    position: relative;
+    top: 6px;
+  }
+  .el-submenu__title {
+    padding: 0 10px;
+    height: 30px !important;
+    line-height: 30px !important;
+  }
+  // .el-input__icon {
+  //   color: #5E6366;
+  // }
+}
+.el-menu--popup {
+  min-width: 58px !important;
+  // height: 151px !important;
+  .el-icon-arrow-right {
+    display: none !important;
   }
 }
 
-.el-cascader-menu {
-  min-width: 58px !important;
-  color: #000000 !important;
-  font-family: Roboto;
-  font-style: normal;
-  font-weight: normal;
-  font-size: 12px;
-  line-height: 14px;
+.el-submenu .el-menu-item {
+  min-width: 100px !important;
 }
-.el-icon-arrow-right {
-  display: none !important;
+// .el-submenu__title:hover {
+//   color: rgba(0, 122, 255, 0.12) !important;
+// }
+.el-menu--horizontal>.el-submenu.is-active .el-submenu__title {
+  border-bottom: none !important;
 }
+.el-submenu.is-active .el-submenu__title {
+  border-bottom: none !important;
+}
+// .el-cascader-menu {
+//   min-width: 58px !important;
+//   color: #000000 !important;
+//   font-family: Roboto;
+//   font-style: normal;
+//   font-weight: normal;
+//   font-size: 12px;
+//   line-height: 14px;
+// }
 
 .el-main {
   h1 {
@@ -336,6 +439,7 @@ export default {
     line-height: 42px;
     color: rgba(0, 0, 0, 0.87);
   }
+
   .group-button {
     width: 138px;
     height: 115px;
@@ -366,12 +470,61 @@ export default {
   button:hover {
     background-color: rgba(0, 122, 255, 0.12);
   }
+  .procedure {
+    position: relative;
+  }
+  .procedure-switch {
+    position: absolute;
+    display: inline;
+    right: -10px;
+    top: 60px;
+    .el-icon {
+      font-size: 38px !important;
+    }
+    .btn-prev, .btn-next {
+      width: 30px;
+      height: 40px;
+      min-width: 10px !important;
+      background: none !important;
+    }
+    .btn-prev:hover {
+      background: none
+    }
+    .btn-next:hover {
+      background: none
+    }
+  }
+  .procedure-edit {
+    position: absolute;
+    bottom: -60px;
+    right: 30px;
+    border-color: #0F85DA;
+    color: #0F85DA;
+    font-family: Roboto;
+    font-style: normal;
+    font-weight: 500;
+    font-size: 14px;
+    line-height: 16px;
+    /* identical to box height, or 114% */
+
+    letter-spacing: 1.25px;
+  }
   .table {
-    margin-top: 69px;    
+    margin-top: 73px;    
     .download:hover {
       cursor: pointer;
     }
   }
+  .el-table th>.cell {
+    padding-left: 14px;
+  }
+  .block {
+    float: right;
+    margin: 20px 0;
+  }
+}
+.btn-prev, .btn-next, .el-pager {
+  padding: 0 !important;
 }
 .color1 p {
   color: red;
@@ -391,6 +544,5 @@ export default {
 .color6 p {
   color: purple;
 }
-
 
 </style>
