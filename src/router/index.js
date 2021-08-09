@@ -2,7 +2,7 @@ import Vue from 'vue'
 import VueRouter from 'vue-router'
 import Layout from '../views/layout'
 import Home from '../views/Home'
-
+import edit from '../views/layout/edit.vue'
 Vue.use(VueRouter)
 
 const routes = [
@@ -15,6 +15,11 @@ const routes = [
     path: '/home',
     name: 'home',
     component: Home
+  },
+  {
+    path: '/edit',
+    name: 'edit',
+    component: edit
   }
 ]
 
