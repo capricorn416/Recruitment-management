@@ -23,7 +23,7 @@ import { sendVerifyCode, signIn } from '@/api/login.js'
     data() {
       return {
         phone_number: 18357422510,
-        verification_code: '080703',
+        verification_code: '350844',
 
       }
     },

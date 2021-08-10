@@ -1,7 +1,6 @@
 <template>
   <div>
-    <el-container>
-      <el-header height="114px" class="head-bar">
+      <div class="head-bar">
         <div class="head-bar_left">
           <img src="~assets/logo.png" width="40px">
           <!-- <span class="cascader">
@@ -28,13 +27,11 @@
           </el-button>
           <p> 首页 </p> <p v-if="check !== 0">{{ "-" + tip }}</p> 
         </div>
-      </el-header>
+      </div>
 
-      <el-container>
-        <el-aside width="300px">
-        </el-aside>
 
-        <el-main>
+
+      <div class="main">
           <h1>本次招新数据</h1>
           <!-- 所有候选人 -->
           <div v-if="check ===  0">
@@ -48,7 +45,7 @@
           <!-- 切换到对应组别下的流程 -->
           <div v-if="check ===  1 && themes" class="procedure">
             <el-button v-for="(theme, index) in themes" :key="index" v-show="index<=max && index>=min"
-             class="group-button" :class="colors[index]" >
+             class="group-button" :class="colors[index]" @click="pickStage(index)" >
               <h2>{{ theme.theme }}</h2>
               <p>{{ theme.count }}</p>
             </el-button>
@@ -60,9 +57,42 @@
               :page-count="themes.length-5"
             >
             </el-pagination>
-            <el-button class="procedure-edit">流程编辑</el-button>
+
+            <div class="procedure-edit">
+              <el-button class="procedure-edit-button" @click.native="isShow = !isShow">流程编辑</el-button>
+              <div class="procedure-edit-frame" v-if="isShow">
+                <el-scrollbar>
+                <h1 class="edit-header">编辑考核流程</h1> 
+                <el-button type="danger" icon="el-icon-close" circle size="mini" class="close-button" @click.native="isShow = false"></el-button>
+                <ul class="edit-stage">
+                  <li v-for="(theme, index) in themes" :key="index"> {{ theme.theme }} 
+                    <i class="el-icon-remove-outline remove-button" @click="stageRemove(index)"></i>
+                  </li>
+                  <li><input type="text" v-model="stageInput">
+                    <i class="el-icon-circle-plus-outline remove-button" @click="stageAdd"></i>
+                  </li>
+                </ul>
+                </el-scrollbar>
+              </div>
+            </div>
           </div>
           
+          <!-- <div class="edit">
+            <button class="edit-button" @click="isShow = !isShow">
+              编辑流程
+            </button>
+
+            <div class="edit-frame" v-if="isShow">
+              <h1></h1>
+              <button @click="isShow = false">x</button>
+              <ul>
+                <li v-for="(stage, index) in stages" :key="index">{{ stage }}
+                  <button>-</button>
+                </li>
+                <li> <input type="text"> <button @click="addStage">+</button> </li>
+              </ul>
+            </div>
+          </div> -->
 
           <el-card class="table">
             <el-table
@@ -114,7 +144,10 @@
               <el-table-column
                 label="报名材料"
                 prop="work_url">
-                <v-icon class="download">mdi-download</v-icon>
+                <template slot-scope="scope">
+                   <v-icon class="download" @click="download(scope.row.work_url)">mdi-download</v-icon>
+                </template>
+               
               </el-table-column>
             </el-table>
 
@@ -130,26 +163,30 @@
               </el-pagination>
             </div>
           </el-card>
-        </el-main>
-      </el-container>
-    </el-container>
+      </div>
   </div>
 </template>
 
 <script>
 import { getGroupCount, getStageCount, getCandidate } from '@/api/getInfo.js'
+import { addStage, deleteStage } from '@/api/edit.js'
 
 export default {
   name: 'LayoutIndex',
   components: {},
   data() {
     return {
+      inputable: false,
       total: 0,
       currentPage: 1,
       check: 0,
       max: 5,
       min: 0,
       tip: '',
+      groupIndex: -1,
+      stage: '',
+      stageIndex: 0,
+      stageInput: '',
       groups: [{
         title: '产品组',
         count: 0
@@ -200,24 +237,61 @@ export default {
       {
         label: '2027'
       }],
-      season: ['Spring', 'Autumn']
+      season: ['Spring', 'Autumn'],
+      stages: ['简历', '笔试', '群面', '单面', '通过'],
+      isShow: false
     }
   },
   methods: {
     // 切换时间
     handleSelect(index, indexPath) {
+      this.currentPage = 1;
+      this.check = 0;
+      this.tip = '';
+      this.groupIndex = -1;
+      this.stage = '';
+      this.stageIndex = 0;
+      this.max = 5;
+      this.min = 0;
       this.time[0] = indexPath[1];
       this.time[1] = indexPath[2];
       this.getGroupInfo();
-      this.getCandidateInfo(-1, 0, "")
+      this.getCandidateInfo(this.groupIndex, 0, this.stage)
     },
     // 切换到对应组别下的流程
     getStage(i) {
-      console.log(i);
-      this.getCandidateInfo(i+1, 0, '');
+      this.isShow = false;
       this.check = 1;
-      this.getStageInfo(i+1);
+            this.max = 5;
+      this.min = 0;
+      // console.log(i);
+      this.groupIndex = i+1;
+      this.currentPage = 1;
+      this.getCandidateInfo(this.groupIndex, 0, this.stage);
+      
+      this.getStageInfo(this.groupIndex);
       this.tip = this.groups[i].title; 
+    },
+    // 切换到对应流程
+    pickStage(index) {
+      console.log(index);
+      this.currentPage = 1;
+            this.max = 5;
+      this.min = 0;
+      this.stageIndex = index;
+      this.stage = this.themes[this.stageIndex].theme;
+      this.getCandidateInfo(this.groupIndex, 0, this.stage);
+    },
+    // 下载文件
+    download(url) {
+      // console.log(url);
+      window.location.href = url;
+    },
+    openFrame() {
+      document.querySelector('.procedure-edit-frame').style.display = "block"
+    },
+    closeFrame() {
+      document.querySelector('.procedure-edit-frame').style.display = "none"
     },
     // 流程按钮的移动
     nextItem() {
@@ -229,11 +303,26 @@ export default {
       this.min--;
     },
     // 切换候选人表单页码
+    nextPage() {
+      this.currentPage++;
+      this.getCandidateInfo(this.groupIndex, 10*(this.currentPage-1), this.stage);
+    },
+    prePage() {
+      this.currentPage--;
+      this.getCandidateInfo(this.groupIndex, 10*(this.currentPage-1), this.stage);
+    },
     // 返回首页导航
     backtoHome() {
+            this.max = 5;
+      this.min = 0;
+      this.currentPage = 1;
       this.check = 0;
+      this.tip = '';
+      this.groupIndex = -1;
+      this.stage = '';
+      this.stageIndex = 0;
       this.getGroupInfo();
-      this.getCandidateInfo(-1, 0, "");
+      this.getCandidateInfo(this.groupIndex, 0, this.stage);
     },
     // 获得候选人信息
     getCandidateInfo(groupIndex, pageNum, stageInfo) {
@@ -289,11 +378,46 @@ export default {
         console.log(err.response.data)
       });
     },
+    stageRemove(index) {
+      let data = {
+        "year": this.time[0],
+        "season": this.time[1],
+        "group": this.groupIndex,
+        "stage": this.themes[index].theme
+      }
+      console.log(data);
+      deleteStage(data).then((res) => {
+        console.log(res);
+        this.getStageInfo(this.groupIndex);
+        this.min = 0;
+        this.max = 5;
+      }).catch((err) => {
+        console.log(err);
+      });
+
+    },
+    stageAdd() {
+      // console.log(this.stageInput)
+      // console.log(this.groupIndex, this.stage);
+      let data = {
+        "year": this.time[0],
+        "season": this.time[1],
+        "group": this.groupIndex,
+        "stage": this.stageInput
+      }
+      addStage(data).then((res) => {
+        this.getStageInfo(this.groupIndex);
+      }).catch((err) => {
+        console.log(err);
+      });
+      this.stageInput = '';
+    }
+ 
     
   },
   created() {
     this.getGroupInfo()
-    this.getCandidateInfo(-1, 0, "")
+    this.getCandidateInfo(-1, 0, '')
   }
 }
 </script>
@@ -301,6 +425,8 @@ export default {
 <style lang="less">
 .head-bar {
   position: relative;
+  height: 114px;
+  width: 100%;
   border-bottom: 1px solid #8D8D8D;
   padding: 0 !important;
   .head-bar_left {
@@ -402,7 +528,10 @@ export default {
 //   line-height: 14px;
 // }
 
-.el-main {
+.main {
+  position: relative;
+  left: 350px;
+  width: 990px;
   h1 {
     margin-top: 23px;
     font-family: Quicksand;
@@ -440,7 +569,7 @@ export default {
       margin-top: 8px;
     }
   }
-  button:hover {
+  .group-button:hover {
     background-color: rgba(0, 122, 255, 0.12);
   }
   .procedure {
@@ -469,18 +598,100 @@ export default {
   }
   .procedure-edit {
     position: absolute;
-    bottom: -60px;
-    right: 30px;
-    border-color: #0F85DA;
-    color: #0F85DA;
+    right: 0;
+    width: 400px;
+    
+  }
+  .procedure-edit-button {
+    float: right;
+    margin-top: 20px;
+    margin-right: 40px;
+    border: 2px solid #7fb6dd;
+    color:  #0F85DA;
     font-family: Roboto;
     font-style: normal;
     font-weight: 500;
     font-size: 14px;
-    line-height: 16px;
+    // line-height: 16px;
+    padding: 8px 18px;
     /* identical to box height, or 114% */
-
     letter-spacing: 1.25px;
+  }
+  .el-scrollbar {
+    height: 100%;
+  }
+  .el-scrollbar__wrap {
+    overflow-y: scroll;
+    overflow-x: hidden;
+    width: 110%;
+    height: 100%;
+  }
+  .procedure-edit-frame {
+    // display: none;
+    position: absolute;
+    z-index: 10000;
+    top: 65px;
+    left: 145px;
+    // top: 100px;
+    width: 229px;
+    height: 275px;
+    background: #ffffff;
+    border: 1px solid #757575;
+    box-sizing: border-box;
+    border-radius: 4px;
+    position: relative;
+    .edit-header {
+      display: inline-block;
+      font-family: Open Sans;
+      font-style: normal;
+      font-weight: bold;
+      font-size: 18px;
+      line-height: 16px;
+      color: #3F3D56;
+      margin-top: 14px;
+      margin-left: 32px;
+      
+    }
+    .close-button {
+      float: right;
+      margin: 10px 25px 0 0;
+      font-size: 10px;
+    }
+    .remove-button {
+      float: right;
+      margin: -7px 30px 0 0;
+      // border: 2px solid #757575;
+      // font-size: 10px;
+      color: #b1aeae;
+      font-size: 30px;
+      font-weight: 400;
+    }
+    .remove-button:hover {
+      font-weight: 700;
+      color: #757575;
+      cursor: pointer;
+    }
+    .edit-stage {
+      list-style: none;
+      padding: 0;
+      margin-left: 32px;
+      margin-top: 27px;
+      li {
+        margin-bottom: 20px;
+        font-family: Open Sans;
+        font-style: normal;
+        font-weight: normal;
+        font-size: 18px;
+        line-height: 16px;
+        color: #2C2C2C;
+      }
+      input {
+        width: 79px;
+        border-bottom: 1px solid #000;
+        outline: none;
+        padding-bottom: 3px;
+      }
+    }
   }
   .table {
     margin-top: 73px;    
@@ -528,5 +739,16 @@ export default {
 .color6 p {
   color: purple;
 }
-
+.edit-button {
+  padding: 5px 18px;
+  outline: none;
+  border: 2px solid #0F85DA;
+  border-radius: 5px;
+  font-family: Roboto;
+  font-style: normal;
+  font-weight: 500;
+  font-size: 14px;
+  letter-spacing: 1.25px;
+  color: #0F85DA;
+}
 </style>

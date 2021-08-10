@@ -2,7 +2,7 @@ import Vue from 'vue'
 import VueRouter from 'vue-router'
 import Layout from '../views/layout'
 import Home from '../views/Home'
-import edit from '../views/layout/edit.vue'
+import About from '../views/About'
 Vue.use(VueRouter)
 
 const routes = [
@@ -17,10 +17,11 @@ const routes = [
     component: Home
   },
   {
-    path: '/edit',
-    name: 'edit',
-    component: edit
+    path: '/about',
+    name: 'about',
+    component: About
   }
+
 ]
 
 const router = new VueRouter({
