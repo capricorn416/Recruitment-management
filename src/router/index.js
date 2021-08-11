@@ -1,7 +1,7 @@
 import Vue from 'vue'
 import VueRouter from 'vue-router'
 import Layout from '../views/layout'
-import Home from '../views/Home'
+import Login from '../views/Login'
 import About from '../views/About'
 Vue.use(VueRouter)
 
@@ -12,9 +12,9 @@ const routes = [
     component: Layout
   },
   {
-    path: '/home',
-    name: 'home',
-    component: Home
+    path: '/login',
+    name: 'login',
+    component: Login
   },
   {
     path: '/about',
@@ -31,11 +31,11 @@ const router = new VueRouter({
 router.beforeEach((to, from, next) => {
   const user = window.localStorage.getItem('user');
 
-  if(to.path !== '/home'){
+  if(to.path !== '/login'){
     if(user) {
       next()
     }else {
-      next('/home')
+      next('/login')
     }  
   }else {
     next()

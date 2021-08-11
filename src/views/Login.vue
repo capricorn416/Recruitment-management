@@ -46,7 +46,7 @@
 <script>
 import { sendVerifyCode, signIn } from "@/api/login.js";
 export default {
-  name: "Home",
+  name: "Login",
   
   components: {},
   data() {
