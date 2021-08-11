@@ -50,6 +50,7 @@
               <p>{{ theme.count }}</p>
             </el-button>
             <el-pagination
+              v-if="themes.length > 6"
               layout="prev, next"
               class="procedure-switch"
               @next-click="nextItem"
@@ -159,6 +160,7 @@
                 :current-page="currentPage"
                 @next-click="nextPage"
                 @prev-click="prePage"
+                :page-size="10"
                 >
               </el-pagination>
             </div>
@@ -211,7 +213,10 @@ export default {
         title: '移动组',
         count: 0
       }],
-      themes: [],
+      themes: [{
+        theme: '全部',
+        count: 0
+      }],
       grades: ['大一','大二','大三','大四','研一','研二','研五'],
       colors: ['color1', 'color2', 'color3', 'color4', 'color5', 'color6'],
       time: ['2021', 'Autumn'],
@@ -286,12 +291,6 @@ export default {
     download(url) {
       // console.log(url);
       window.location.href = url;
-    },
-    openFrame() {
-      document.querySelector('.procedure-edit-frame').style.display = "block"
-    },
-    closeFrame() {
-      document.querySelector('.procedure-edit-frame').style.display = "none"
     },
     // 流程按钮的移动
     nextItem() {
@@ -694,7 +693,8 @@ export default {
     }
   }
   .table {
-    margin-top: 73px;    
+    margin-top: 73px;
+    margin-bottom: 80px;    
     .download:hover {
       cursor: pointer;
     }
@@ -750,5 +750,12 @@ export default {
   font-size: 14px;
   letter-spacing: 1.25px;
   color: #0F85DA;
+}
+
+.el-submenu__title:hover {
+  color: #ECF0FF !important;
+}
+.el-menu-item:hover {
+  color: #ECF0FF !important;
 }
 </style>
