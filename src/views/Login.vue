@@ -220,7 +220,7 @@ padding-left: 20px;
   position: absolute;
   width: 139px;
   height: 68px;
-  left: 1276px;
+  left: calc(100vw - 139px - 25px);
   top: 935px;
 }
 .log {

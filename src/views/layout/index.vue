@@ -29,8 +29,6 @@
         </div>
       </div>
 
-
-
       <div class="main">
           <h1>本次招新数据</h1>
           <!-- 所有候选人 -->
@@ -43,23 +41,31 @@
           </div>
 
           <!-- 切换到对应组别下的流程 -->
-          <div v-if="check ===  1 && themes" class="procedure">
-            <el-button v-for="(theme, index) in themes" :key="index" v-show="index<=max && index>=min"
-             class="group-button" :class="colors[index]" @click="pickStage(index)" >
-              <h2>{{ theme.theme }}</h2>
-              <p>{{ theme.count }}</p>
-            </el-button>
-            <el-pagination
-              v-if="themes.length > 6"
-              layout="prev, next"
-              class="procedure-switch"
-              @next-click="nextItem"
-              @prev-click="preItem"
-              :page-count="themes.length-5"
-            >
-            </el-pagination>
+          <div class="procedure">
+            <div  class="procedure-buttons" v-if="check === 1" >
+              <el-button class="group-button" @click="backtoGroupHome(groups[groupIndex-1])" >
+                <h2>全部</h2>
+                <p>{{ groups[groupIndex-1].count }}</p>
+              </el-button>
+              <div v-if="check ===  1 && themes" style="display: inline;" >
+                <el-button v-for="(theme, index) in themes" :key="index" v-show="index<=max && index>=min"
+                class="group-button" :class="colors[index]" @click="pickStage(index)" >
+                  <h2>{{ theme.theme }}</h2>
+                  <p>{{ theme.count }}</p>
+                </el-button>
+                <el-pagination
+                  v-if="themes.length > 5"
+                  layout="prev, next"
+                  class="procedure-switch"
+                  @next-click="nextItem"
+                  @prev-click="preItem"
+                  :page-count="themes.length-4"
+                >
+                </el-pagination>
+              </div>
+            </div>
 
-            <div class="procedure-edit">
+            <div class="procedure-edit" v-if="check ===  1">
               <el-button class="procedure-edit-button" @click.native="isShow = !isShow">流程编辑</el-button>
               <div class="procedure-edit-frame" v-if="isShow">
                 <el-scrollbar>
@@ -98,7 +104,8 @@
           <el-card class="table">
             <el-table
               :data="tableData"
-              style="width: 100%">
+              style="width: 100%"
+              @selection-change="handleSelectionChange">
                <el-table-column
                 type="selection"
                 width="55">
@@ -166,23 +173,65 @@
             </div>
           </el-card>
       </div>
+
+      <div class="left" v-if="check === 1">
+        <el-button icon="el-icon-circle-plus" class="new-button" :disabled="!newState" @click="popUp = true">更新状态</el-button>
+        <el-card class="new-card" >
+          <!-- <el-checkbox-group v-model="checked">
+          <el-checkbox true-label="pass" @change="handleChange">通过</el-checkbox>
+          <el-checkbox true-label="disuse" @change="handleChange">淘汰</el-checkbox>
+          <el-checkbox true-label="finalpass" @change="handleChange">最终通过</el-checkbox>
+          </el-checkbox-group> -->
+          <el-checkbox-group v-model="checkList" :max="1" @change="handleChange">
+            <el-checkbox label="pass">通过</el-checkbox>
+            <el-checkbox label="disuse">淘汰</el-checkbox>
+            <el-checkbox label="finalpass">最终通过</el-checkbox>
+          </el-checkbox-group>       
+        </el-card>
+
+        <el-card class="new-text" v-if="true">
+          <div slot="header">
+            请调整短信内容
+          </div>
+          <div> {{text}}
+          </div>
+        </el-card>
+        <el-button class="new-submit" @click="centerDialogVisible = true">发送</el-button>
+        <el-dialog
+          title="短信发送确认"
+          :visible.sync="centerDialogVisible"
+          width="30%"
+          center>
+          <span>需要注意的是内容是默认不居中的</span>
+          <span slot="footer" class="dialog-footer">
+            <el-button @click="centerDialogVisible = false">取消</el-button>
+            <el-button type="primary" @click="centerDialogVisible = false">确定发送</el-button>
+          </span>
+        </el-dialog>
+      </div>
+
+      
   </div>
 </template>
 
 <script>
 import { getGroupCount, getStageCount, getCandidate } from '@/api/getInfo.js'
-import { addStage, deleteStage } from '@/api/edit.js'
+import { addStage, deleteStage, getTemplate } from '@/api/edit.js'
 
 export default {
   name: 'LayoutIndex',
   components: {},
   data() {
     return {
+      text:'',
+      checkList: [],
       inputable: false,
+      newState: false,
+      centerDialogVisible: false,
       total: 0,
       currentPage: 1,
       check: 0,
-      max: 5,
+      max: 4,
       min: 0,
       tip: '',
       groupIndex: -1,
@@ -244,20 +293,21 @@ export default {
       }],
       season: ['Spring', 'Autumn'],
       stages: ['简历', '笔试', '群面', '单面', '通过'],
-      isShow: false
+      isShow: false,
+      popUp: false,
+      textUp: true,
     }
   },
   methods: {
     // 切换时间
     handleSelect(index, indexPath) {
-      this.currentPage = 1;
+      
       this.check = 0;
       this.tip = '';
       this.groupIndex = -1;
       this.stage = '';
       this.stageIndex = 0;
-      this.max = 5;
-      this.min = 0;
+      
       this.time[0] = indexPath[1];
       this.time[1] = indexPath[2];
       this.getGroupInfo();
@@ -265,15 +315,10 @@ export default {
     },
     // 切换到对应组别下的流程
     getStage(i) {
-      this.isShow = false;
       this.check = 1;
-            this.max = 5;
-      this.min = 0;
       // console.log(i);
       this.groupIndex = i+1;
-      this.currentPage = 1;
-      this.getCandidateInfo(this.groupIndex, 0, this.stage);
-      
+      this.getCandidateInfo(this.groupIndex, 0, this.stage);     
       this.getStageInfo(this.groupIndex);
       this.tip = this.groups[i].title; 
     },
@@ -281,7 +326,7 @@ export default {
     pickStage(index) {
       console.log(index);
       this.currentPage = 1;
-            this.max = 5;
+      this.max = 5;
       this.min = 0;
       this.stageIndex = index;
       this.stage = this.themes[this.stageIndex].theme;
@@ -312,9 +357,6 @@ export default {
     },
     // 返回首页导航
     backtoHome() {
-            this.max = 5;
-      this.min = 0;
-      this.currentPage = 1;
       this.check = 0;
       this.tip = '';
       this.groupIndex = -1;
@@ -322,6 +364,12 @@ export default {
       this.stageIndex = 0;
       this.getGroupInfo();
       this.getCandidateInfo(this.groupIndex, 0, this.stage);
+    },
+    // 返回分组后的首页
+    backtoGroupHome(index) {
+    },
+    handleSelectionChange(val) {
+      this.newState = true;
     },
     // 获得候选人信息
     getCandidateInfo(groupIndex, pageNum, stageInfo) {
@@ -371,7 +419,7 @@ export default {
       }
       getStageCount(group).then((res) => {
         console.log('我是阶段人数');
-        console.log(res.data.msg)
+        console.log(res)
         this.themes = res.data.msg
       }).catch((err) => {
         console.log(err.response.data)
@@ -389,7 +437,7 @@ export default {
         console.log(res);
         this.getStageInfo(this.groupIndex);
         this.min = 0;
-        this.max = 5;
+        this.max = 4;
       }).catch((err) => {
         console.log(err);
       });
@@ -410,13 +458,44 @@ export default {
         console.log(err);
       });
       this.stageInput = '';
+    },
+    handleChange(val) {
+      if(val[0]){
+        getTemplate({
+            'template_id': val[0]
+          }).then((res) => {
+            console.log(res);
+            this.text = res.data.msg
+          }).catch((err) => {
+            console.log(err);
+          });
+      }else {
+        this.text = ''
+      }
+
     }
  
     
   },
   created() {
     this.getGroupInfo()
-    this.getCandidateInfo(-1, 0, '')
+    this.getCandidateInfo(-1, 0, '');
+  },
+  watch: {
+    check() {
+      this.currentPage = 1;
+      this.max = 4;
+      this.min = 0;
+      this.isShow = false;
+      this.popUp = false;
+      this.textUp = false;
+      this.stageInput = '';
+    }
+  },
+  computed: {
+    text1() {
+      
+    }
   }
 }
 </script>
@@ -757,5 +836,72 @@ export default {
 }
 .el-menu-item:hover {
   color: #ECF0FF !important;
+}
+
+.left {
+  position: absolute;
+  left: 0;
+  top: 115px;
+  width: 300px;
+  .new-button {
+    margin-top: 98px;
+    margin-left: 90px;
+    border-radius: 20px;
+    width: 173px;
+    height: 45px;
+    font-family: Segoe UI;
+    font-weight: normal;
+    font-size: 20px;
+    box-shadow: 0px 3px 3px rgba(0, 0, 0, 0.25);
+    color: #0F85DA;
+    border: 0.5px solid #0F85DA;
+    .el-icon-circle-plus {
+      margin-right: 10px;
+    }
+  }
+  .new-card {
+    margin-left: 29px;
+    margin-top: 73px;
+    .el-checkbox {
+      margin-right: 20px;
+      .el-checkbox__label {
+        padding-left: 5px;
+      }
+    }
+  }
+  .new-text {
+    margin-top: 41px;
+    margin-left: 22px;
+    .el-card__header {
+      padding: 0;
+      text-align: center;
+      height: 38px;
+      background: #63B1FF;
+      line-height: 38px;
+      font-family: Segoe UI;
+      font-style: normal;
+      font-weight: bold;
+      font-size: 18px;
+      letter-spacing: 0.2em;
+      color: #FFFFFF;
+
+    }
+  }
+  .new-submit {
+    margin-left: 175px;
+    margin-top: 37px;
+    width: 125px;
+    height: 45px;
+    background: #63B1FF;
+    border: 0.5px solid #0F85DA;
+    box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
+    border-radius: 20px;
+    font-family: Segoe UI;
+    font-weight: bold;
+    font-size: 24px;
+    letter-spacing: 0.265em;
+    color: #FFFFFF;
+    padding: 0;
+  }
 }
 </style>

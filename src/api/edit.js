@@ -23,3 +23,12 @@ export const addStage = (data) => {
     }
   })
 }
+
+// 获取短信模板
+export const getTemplate = (params) => {
+  return request({
+    method: 'GET',
+    url: '/recruit/assessment/getTemplate',
+    params
+  })
+}
