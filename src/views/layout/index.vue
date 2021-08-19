@@ -3,13 +3,6 @@
       <div class="head-bar">
         <div class="head-bar_left">
           <img src="~assets/logo.png" width="40px">
-          <!-- <span class="cascader">
-            <el-cascader
-            v-model="time"
-            :options="options"
-            separator = '-'
-            @change="handleChange"></el-cascader>
-          </span> -->
           <p class="head-bar_time">{{ time.join('-') }}</p>
           <el-menu mode="horizontal" @select="handleSelect">
             <el-submenu class="sub" index=1>
@@ -42,14 +35,16 @@
 
           <!-- 切换到对应组别下的流程 -->
           <div class="procedure">
-            <div  class="procedure-buttons" v-if="check === 1" >
-              <el-button class="group-button" @click="backtoGroupHome(groups[groupIndex-1])" >
+            <div  class="procedure-buttons" v-if="check === 1 || check === 2" >
+              <el-button class="group-button" @click="backtoGroupHome(groups[groupIndex-1])" 
+              :class="stageIndex === -1 ? 'selected': null">
                 <h2>全部</h2>
                 <p>{{ groups[groupIndex-1].count }}</p>
               </el-button>
-              <div v-if="(check ===  1) && themes" style="display: inline;" >
+              <div v-if="(check ===  1 || check === 2) && themes" style="display: inline;" >
                 <el-button v-for="(theme, index) in themes" :key="index" v-show="index<=max && index>=min"
-                class="group-button" :class="colors[index]" @click="pickStage(index)" >
+                class="group-button" :class="[colors[index], index === stageIndex ? 'selected' : null] "
+                 @click="pickStage(index)" >
                   <h2>{{ theme.theme }}</h2>
                   <p>{{ theme.count }}</p>
                 </el-button>
@@ -65,7 +60,7 @@
               </div>
             </div>
 
-            <div class="procedure-edit" v-if="check ===  1">
+            <div class="procedure-edit" v-if="check ===  1 || check === 2">
               <el-button class="procedure-edit-button" @click.native="isShow = !isShow">流程编辑</el-button>
               <div class="procedure-edit-frame" v-if="isShow">
                 <el-scrollbar>
@@ -84,23 +79,6 @@
             </div>
           </div>
           
-          <!-- <div class="edit">
-            <button class="edit-button" @click="isShow = !isShow">
-              编辑流程
-            </button>
-
-            <div class="edit-frame" v-if="isShow">
-              <h1></h1>
-              <button @click="isShow = false">x</button>
-              <ul>
-                <li v-for="(stage, index) in stages" :key="index">{{ stage }}
-                  <button>-</button>
-                </li>
-                <li> <input type="text"> <button @click="addStage">+</button> </li>
-              </ul>
-            </div>
-          </div> -->
-
           <el-card class="table">
             <el-table
               :data="tableData"
@@ -160,7 +138,7 @@
             </el-table>
 
             <div class="block">
-              <p>{{ currentPage+'/'+ Math.ceil(total/10) }}</p>
+              <p>{{ currentPage+'/'+ totalPages }}</p>
               <el-pagination
                 layout="prev, next"
                 :total="total"
@@ -174,14 +152,9 @@
           </el-card>
       </div>
 
-      <div class="left">
+      <div class="left" v-if="check === 1 || check === 2">
         <el-button icon="el-icon-circle-plus" class="new-button" :disabled="!newState" @click="popUp = true">更新状态</el-button>
         <el-card class="new-card" v-if="popUp">
-          <!-- <el-checkbox-group v-model="checked">
-          <el-checkbox true-label="pass" @change="handleChange">通过</el-checkbox>
-          <el-checkbox true-label="disuse" @change="handleChange">淘汰</el-checkbox>
-          <el-checkbox true-label="finalpass" @change="handleChange">最终通过</el-checkbox>
-          </el-checkbox-group> -->
           <el-radio-group v-model="radio" @change="handleChange">
             <el-radio label="pass">通过</el-radio>
             <el-radio label="disuse">淘汰</el-radio>
@@ -194,7 +167,15 @@
             <div slot="header">
               请调整短信内容
             </div>
-            <div v-html="text">
+            <div v-if="radio === 'pass'">
+              <div v-html="text1" class="text1">
+              </div>
+              <input type="text" class="qq-input" v-model="qq_input"/>
+              <div v-html="text2">
+              </div>
+            </div>
+            <div v-else>
+              <div v-html="text"></div>
             </div>
           </el-card>
           <el-button class="new-submit" @click="centerDialogVisible = true">发送</el-button>
@@ -205,13 +186,14 @@
             center>
             <span>
               <p>
-                您确认向以下位同学：<br>
+                您确认向以下{{ candidateSelected.length }}位同学：<br>
+                {{ candidateSelected_name.join(', ') }}<br>
                 发送信息吗？
               </p>
             </span>
             <span slot="footer" class="dialog-footer">
-              <el-button @click="centerDialogVisible = false">取消</el-button>
-              <el-button @click="centerDialogVisible = false">确定发送</el-button>
+              <el-button @click="centerDialogVisible = false" class="quit_button">取消</el-button>
+              <el-button @click="submit" class="submit_button" :loading="loading" :disabled="!submitable">确定发送</el-button>
             </span>
           </el-dialog>
         </div>
@@ -231,20 +213,20 @@ export default {
   data() {
     return {
       radio: '',
-      // text:'',
       checkList: [],
       inputable: false,
       newState: false,
       centerDialogVisible: false,
       total: 0,
       currentPage: 1,
+      totalPages: 0,
       check: 0,
       max: 4,
       min: 0,
       tip: '',
       groupIndex: -1,
       stage: '',
-      stageIndex: 0,
+      stageIndex: -1,
       stageInput: '',
       groups: [{
         title: '产品组',
@@ -304,18 +286,24 @@ export default {
       isShow: false,
       popUp: false,
       textUp: false,
-      candidateSelected: []
+      candidateSelected: [],
+      candidateSelected_name: [],
+      id: [],
+      text: '',
+      qq_input: '',
+      loading: false,
+      submitable: true
     }
   },
   methods: {
     // 切换时间
     handleSelect(index, indexPath) {
-      
+
       this.check = 0;
       this.tip = '';
       this.groupIndex = -1;
       this.stage = '';
-      this.stageIndex = 0;
+      this.stageIndex = -1;
       
       this.time[0] = indexPath[1];
       this.time[1] = indexPath[2];
@@ -333,6 +321,7 @@ export default {
     },
     // 切换到对应流程
     pickStage(index) {
+      this.check = 2;
       console.log(index);
       this.stageIndex = index;
       this.stage = this.themes[this.stageIndex].theme;
@@ -367,22 +356,39 @@ export default {
       this.tip = '';
       this.groupIndex = -1;
       this.stage = '';
-      this.stageIndex = 0;
+      this.stageIndex = -1;
       this.getGroupInfo();
-      this.getCandidateInfo(this.groupIndex, 0, this.stage);
+      this.getCandidateInfo(-1, 0, '');
     },
     // 返回分组后的首页
     backtoGroupHome(index) {
+      // console.log(this.groupIndex);
+      this.check = 1;
+      this.stage = '';
+      this.currentPage = 1;
+      this.stageIndex = -1;
+      this.getCandidateInfo(this.groupIndex, 0, '');
+
     },
     handleSelectionChange(val) {
-      this.newState = true;
-      console.log('选中人', val);
-      this.candidateSelected = val;
-      let id = [];
-      this.candidateSelected.forEach((item) => {
-        id.push(item.id);
-      })
-      console.log(id);
+      if(val.length === 0){
+        this.newState = false;
+        this.textUp = false;
+        this.popUp = false;
+        this.radio = ''
+      }
+      else {
+        this.newState = true;
+        this.candidateSelected = val;
+        let id = [];
+        let name = [];
+        this.candidateSelected.forEach((item) => {
+          id.push(item.id);
+          name.push(item.name);
+        })
+        this.candidateSelected_id = id;
+        this.candidateSelected_name = name;
+      }
     },
     // 获得候选人信息
     getCandidateInfo(groupIndex, pageNum, stageInfo) {
@@ -396,9 +402,15 @@ export default {
       }
       getCandidate(params).then((res) => {
         // console.log('我是候选人');
-        // console.log(res.data.msg);
-        this.tableData = res.data.msg.slice(0, res.data.msg.length-1);
-        this.total = res.data.msg[res.data.msg.length-1].total;
+        if(res.data.msg.length != 0) {
+          // console.log(res.data.msg);
+          this.tableData = res.data.msg.slice(0, res.data.msg.length-1);
+          this.total = res.data.msg[res.data.msg.length-1].total;   
+        }else {
+          this.tableData = [];
+          this.total = 0;
+        }
+          this.totalPages = Math.ceil(this.total/10);
       }).catch((err) => {
         console.log(err);
       });
@@ -482,8 +494,61 @@ export default {
           this.text = res.data.msg
         }).catch((err) => {
           console.log(err);
-        })
-      
+        }) 
+    },
+    // 发送短信
+    submit() {
+      this.loading = true;
+      this.submitable = false;
+      switch (this.radio) {
+        case "pass":
+          pass({
+            "candidates_id": this.candidateSelected_id,
+            "qq_number": this.qq_input
+          }).then((res) => {
+            alert('短信发送成功！');
+            this.loading = false;
+            this.submitable = true;
+            this.getStageInfo(this.groupIndex);
+            this.getCandidateInfo(this.groupIndex, 0, this.stage);
+          }).catch((err) => {
+            // console.log(err.response.data.msg);
+            alert('短信发送失败！'+ err.response.data.msg);
+            this.loading = false;
+            this.submitable = true;
+          });
+          break;
+        case "disuse": 
+          disuse({
+            "candidates_id": this.candidateSelected_id
+          }).then((res) => {
+            alert('短信发送成功！');
+            this.loading = false;
+            this.submitable = true;
+            this.getStageInfo(this.groupIndex);
+            this.getCandidateInfo(this.groupIndex, 0, this.stage);
+          }).catch((err) => {
+            alert('短信发送失败！'+ err.response.data.msg);
+            this.loading = false;
+            this.submitable = true;
+          });
+          break;
+        case "finalpass":
+          finalPass({
+            "candidates_id": this.candidateSelected_id
+          }).then((res) => {
+            alert('短信发送成功！');
+            this.loading = false;
+            this.submitable = true;
+            this.getStageInfo(this.groupIndex);
+            this.getCandidateInfo(this.groupIndex, 0, this.stage);
+          }).catch((err) => {
+            alert('短信发送失败！'+ err.response.data.msg);
+            this.loading = false;
+            this.submitable = true;
+          });
+          break;
+      }
     }
   },
   created() {
@@ -500,14 +565,33 @@ export default {
       this.textUp = false;
       this.stageInput = '';
       this.newState = false;
+      this.candidateSelected_id = [];
+      this.candidateSelected = [];
+      this.candidates_name = [];
+      this.qq_input = '';
+      this.radio = '';
+      this.centerDialogVisible = false;
     }
   },
   computed: {
+    text1() {
+      return this.text.split('{qq_number}')[0]
+    },
+    text2() {
+      return this.text.split('{qq_number}')[1]
+    },
   }
 }
 </script>
 
 <style lang="less">
+.head-bar_time, .location, .main h1 {
+  cursor: default;
+  user-select: none;
+  -moz-user-select: none;
+  -webkit-user-select: none;
+  -ms-user-select: none;
+}
 .head-bar {
   position: relative;
   height: 114px;
@@ -523,13 +607,6 @@ export default {
     margin-top: 8px;
     margin-left: 16px;
   }
-  // .el-input {
-  //   width: 210px;
-  // }
-  // .el-cascader {
-  //   left: 10px;
-  //   top: -10px;
-  // }
   .head-bar_time {
     display: inline;
     border: none !important;
@@ -886,6 +963,7 @@ export default {
     }
   }
   .new-text {
+    position: relative;
     margin-top: 41px;
     margin-left: 22px;
     .el-card__header {
@@ -902,6 +980,7 @@ export default {
       color: #FFFFFF;
 
     }
+
   }
   .new-submit {
     margin-left: 175px;
@@ -941,5 +1020,30 @@ export default {
       }
     }
   }
+  .qq-input {
+    outline: none;
+    border-bottom: 1px solid #888;
+    // padding: 2px;
+    // margin-bottom: 5px;
+    width: 100px;
+    position: absolute;
+    right: 18px;
+    bottom: 69px;
+    font-size: 15px;
+  }
+  .quit_button, .submit_button {
+    width: 102px;
+    margin: 0px 12px;
+    font-size: 16px;
+    padding: 10px 0;
+    font-family: Segoe UI;
+  }
+  .submit_button {
+    color: #0F85DA;
+    border: 1px solid #0F85DA;
+  }
+}
+.selected {
+  background: rgba(0, 153, 250, 0.152344) !important;
 }
 </style>
