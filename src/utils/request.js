@@ -1,4 +1,6 @@
 import axios from 'axios'
+import { MessageBox } from 'element-ui'
+import $router from '@/router'
 
 const request = axios.create({
     baseURL: 'http://101.200.227.216:8888/api/manage'
@@ -10,7 +12,6 @@ request.interceptors.request.use(
   function(config) {
     // console.log(config);
     const user = window.localStorage.getItem('user');
-    console.log(user)
     // 如果有用户登录信息，则统一设置token
     if(user) {
       config.headers.Authorization = `Bearer ${user}`
@@ -23,4 +24,31 @@ request.interceptors.request.use(
     return Promise.reject(error);
 });
 
+request.interceptors.response.use(
+  response => {
+    return response
+  },
+  error => {
+    // 登录过期
+    console.log(error.response.status);
+    if(error.response.status == 401) {
+      if(sessionStorage.getItem('isLogOut') == undefined) {
+        sessionStorage.setItem('isLogOut', true);
+        MessageBox.confirm('登录已过期，请重新登录！', '提示', {
+          confirmButtonText: '确定',
+          showClose: false,
+          showCancelButton: false,
+          closeOnClickModal: false,
+          type: 'warning'
+        }).then(() => {
+          sessionStorage.clear();
+          $router.push({
+            path: '/login'
+          })
+        })
+      }
+    }
+    return Promise.reject(error)
+  }
+)
 export default request
