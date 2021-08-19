@@ -47,7 +47,7 @@
                 <h2>全部</h2>
                 <p>{{ groups[groupIndex-1].count }}</p>
               </el-button>
-              <div v-if="check ===  1 && themes" style="display: inline;" >
+              <div v-if="(check ===  1) && themes" style="display: inline;" >
                 <el-button v-for="(theme, index) in themes" :key="index" v-show="index<=max && index>=min"
                 class="group-button" :class="colors[index]" @click="pickStage(index)" >
                   <h2>{{ theme.theme }}</h2>
@@ -174,40 +174,47 @@
           </el-card>
       </div>
 
-      <div class="left" v-if="check === 1">
+      <div class="left">
         <el-button icon="el-icon-circle-plus" class="new-button" :disabled="!newState" @click="popUp = true">更新状态</el-button>
-        <el-card class="new-card" >
+        <el-card class="new-card" v-if="popUp">
           <!-- <el-checkbox-group v-model="checked">
           <el-checkbox true-label="pass" @change="handleChange">通过</el-checkbox>
           <el-checkbox true-label="disuse" @change="handleChange">淘汰</el-checkbox>
           <el-checkbox true-label="finalpass" @change="handleChange">最终通过</el-checkbox>
           </el-checkbox-group> -->
-          <el-checkbox-group v-model="checkList" :max="1" @change="handleChange">
-            <el-checkbox label="pass">通过</el-checkbox>
-            <el-checkbox label="disuse">淘汰</el-checkbox>
-            <el-checkbox label="finalpass">最终通过</el-checkbox>
-          </el-checkbox-group>       
+          <el-radio-group v-model="radio" @change="handleChange">
+            <el-radio label="pass">通过</el-radio>
+            <el-radio label="disuse">淘汰</el-radio>
+            <el-radio label="finalpass">最终通过</el-radio>
+          </el-radio-group> 
         </el-card>
 
-        <el-card class="new-text" v-if="true">
-          <div slot="header">
-            请调整短信内容
-          </div>
-          <div> {{text}}
-          </div>
-        </el-card>
-        <el-button class="new-submit" @click="centerDialogVisible = true">发送</el-button>
-        <el-dialog
-          title="短信发送确认"
-          :visible.sync="centerDialogVisible"
-          width="30%"
-          center>
-          <span>需要注意的是内容是默认不居中的</span>
-          <span slot="footer" class="dialog-footer">
-            <el-button @click="centerDialogVisible = false">取消</el-button>
-            <el-button type="primary" @click="centerDialogVisible = false">确定发送</el-button>
-          </span>
-        </el-dialog>
+        <div  v-if="textUp">
+          <el-card class="new-text">
+            <div slot="header">
+              请调整短信内容
+            </div>
+            <div v-html="text">
+            </div>
+          </el-card>
+          <el-button class="new-submit" @click="centerDialogVisible = true">发送</el-button>
+          <el-dialog
+            title="短信发送确认"
+            :visible.sync="centerDialogVisible"
+            width="30%"
+            center>
+            <span>
+              <p>
+                您确认向以下位同学：<br>
+                发送信息吗？
+              </p>
+            </span>
+            <span slot="footer" class="dialog-footer">
+              <el-button @click="centerDialogVisible = false">取消</el-button>
+              <el-button @click="centerDialogVisible = false">确定发送</el-button>
+            </span>
+          </el-dialog>
+        </div>
       </div>
 
       
@@ -216,14 +223,15 @@
 
 <script>
 import { getGroupCount, getStageCount, getCandidate } from '@/api/getInfo.js'
-import { addStage, deleteStage, getTemplate } from '@/api/edit.js'
+import { addStage, deleteStage, getTemplate, pass, finalPass, disuse } from '@/api/edit.js'
 
 export default {
   name: 'LayoutIndex',
   components: {},
   data() {
     return {
-      text:'',
+      radio: '',
+      // text:'',
       checkList: [],
       inputable: false,
       newState: false,
@@ -295,7 +303,8 @@ export default {
       stages: ['简历', '笔试', '群面', '单面', '通过'],
       isShow: false,
       popUp: false,
-      textUp: true,
+      textUp: false,
+      candidateSelected: []
     }
   },
   methods: {
@@ -325,9 +334,6 @@ export default {
     // 切换到对应流程
     pickStage(index) {
       console.log(index);
-      this.currentPage = 1;
-      this.max = 5;
-      this.min = 0;
       this.stageIndex = index;
       this.stage = this.themes[this.stageIndex].theme;
       this.getCandidateInfo(this.groupIndex, 0, this.stage);
@@ -370,6 +376,13 @@ export default {
     },
     handleSelectionChange(val) {
       this.newState = true;
+      console.log('选中人', val);
+      this.candidateSelected = val;
+      let id = [];
+      this.candidateSelected.forEach((item) => {
+        id.push(item.id);
+      })
+      console.log(id);
     },
     // 获得候选人信息
     getCandidateInfo(groupIndex, pageNum, stageInfo) {
@@ -382,8 +395,8 @@ export default {
         "stage": stageInfo
       }
       getCandidate(params).then((res) => {
-        console.log('我是候选人');
-        console.log(res.data.msg);
+        // console.log('我是候选人');
+        // console.log(res.data.msg);
         this.tableData = res.data.msg.slice(0, res.data.msg.length-1);
         this.total = res.data.msg[res.data.msg.length-1].total;
       }).catch((err) => {
@@ -402,8 +415,8 @@ export default {
       }
       getGroupCount(time
       ).then((res) => {
-        console.log('我是组别人数');
-        console.log(res.data.msg)
+        // console.log('我是组别人数');
+        // console.log(res.data.msg)
         this.groups = res.data.msg
       }).catch((err) => {
         console.log(err.response.data)
@@ -418,8 +431,8 @@ export default {
         "group": index
       }
       getStageCount(group).then((res) => {
-        console.log('我是阶段人数');
-        console.log(res)
+        // console.log('我是阶段人数');
+        // console.log(res)
         this.themes = res.data.msg
       }).catch((err) => {
         console.log(err.response.data)
@@ -432,9 +445,9 @@ export default {
         "group": this.groupIndex,
         "stage": this.themes[index].theme
       }
-      console.log(data);
+      // console.log(data);
       deleteStage(data).then((res) => {
-        console.log(res);
+        // console.log(res);
         this.getStageInfo(this.groupIndex);
         this.min = 0;
         this.max = 4;
@@ -459,23 +472,19 @@ export default {
       });
       this.stageInput = '';
     },
-    handleChange(val) {
-      if(val[0]){
-        getTemplate({
-            'template_id': val[0]
-          }).then((res) => {
-            console.log(res);
-            this.text = res.data.msg
-          }).catch((err) => {
-            console.log(err);
-          });
-      }else {
-        this.text = ''
-      }
-
+    handleChange() {
+      // console.log(this.radio);
+      this.textUp = true
+      getTemplate({
+          'template_id': this.radio
+        }).then((res) => {
+          console.log(res);
+          this.text = res.data.msg
+        }).catch((err) => {
+          console.log(err);
+        })
+      
     }
- 
-    
   },
   created() {
     this.getGroupInfo()
@@ -490,12 +499,10 @@ export default {
       this.popUp = false;
       this.textUp = false;
       this.stageInput = '';
+      this.newState = false;
     }
   },
   computed: {
-    text1() {
-      
-    }
   }
 }
 </script>
@@ -862,11 +869,20 @@ export default {
   .new-card {
     margin-left: 29px;
     margin-top: 73px;
-    .el-checkbox {
+    // .el-checkbox {
+    //   margin-right: 20px;
+    //   .el-checkbox__label {
+    //     padding-left: 5px;
+    //   }
+    // }
+    .el-radio {
       margin-right: 20px;
-      .el-checkbox__label {
-        padding-left: 5px;
-      }
+    }
+    .el-radio__inner {
+      border-radius: 0;
+    }
+    .el-radio__label {
+      padding-left: 5px;
     }
   }
   .new-text {
@@ -902,6 +918,28 @@ export default {
     letter-spacing: 0.265em;
     color: #FFFFFF;
     padding: 0;
+  }
+  .el-dialog__header {
+    background: #2F9BEA;
+    padding: 0;
+    height: 51px;
+    .el-dialog__title {
+      line-height: 51px;
+      font-family: Segoe UI;
+      font-style: normal;
+      font-weight: bold;
+      font-size: 26px;
+      letter-spacing: 0.2em;
+      color: #FFFFFF;
+    }
+    .el-dialog__headerbtn {
+      top: 15px;      
+      .el-dialog__close {
+        color: #FFFFFF;
+        font-size: 24px;
+        font-weight: bold;
+      }
+    }
   }
 }
 </style>

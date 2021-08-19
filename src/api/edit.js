@@ -32,3 +32,39 @@ export const getTemplate = (params) => {
     params
   })
 }
+
+// 批量通过
+export const pass = (data) => {
+  return request({
+    method: 'POST',
+    url: '/recruit/assessment/pass',
+    data,
+    headers: {
+      'Content-Type': 'application/json'
+    }
+  })
+}
+
+// 批量最终通过
+export const finalPass = (data) => {
+  return request({
+    method: 'POST',
+    url: '/recruit/assessment/finalPass',
+    data,
+    headers: {
+      'Content-Type': 'application/json'
+    }
+  })
+}
+
+// 批量淘汰
+export const disuse = (data) => {
+  return request({
+    method: 'POST',
+    url: '/recruit/assessment/disuse',
+    data,
+    headers: {
+      'Content-Type': 'application/json'
+    }
+  })
+}
