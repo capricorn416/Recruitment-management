@@ -3,7 +3,7 @@ import { MessageBox } from 'element-ui'
 import $router from '@/router'
 
 const request = axios.create({
-    baseURL: 'http://101.200.227.216:8888/api/manage'
+    baseURL: '/api/manage'
 })
 
 request.interceptors.request.use(
