@@ -77,7 +77,6 @@ export default {
      
         .then((result) => {
           console.log(result);
-
           const TIME_COUNT = 60;
           if (!this.loginForm.timer) {
             this.loginForm.showloginCode = false;

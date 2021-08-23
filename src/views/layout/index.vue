@@ -318,6 +318,7 @@ export default {
     }
   },
   methods: {
+    // 下拉菜单的滚动
     RollTime(i) {
       if(i === this.minY ) {
         if(this.minY >= 1) {
