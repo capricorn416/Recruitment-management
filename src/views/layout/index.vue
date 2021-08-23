@@ -4,7 +4,7 @@
         <div class="head-bar_left">
           <img src="~assets/logo.png" width="40px">
           <p class="head-bar_time">{{ time.join('-') }}</p>
-          <el-menu mode="horizontal" @select="handleSelect">
+          <!-- <el-menu mode="horizontal" @select="handleSelect">
             <el-submenu class="sub" index=1>
               <el-submenu :index="item.label" v-for="(item, i) in years" :key="i">
                 <template slot="title">{{item.label}}</template>
@@ -12,7 +12,22 @@
                 <el-menu-item :index="season[1]">Autumn</el-menu-item>
               </el-submenu>
             </el-submenu>
-          </el-menu>
+          </el-menu> -->
+          <div class="drop">
+          <el-button type="text" icon="el-icon-caret-bottom" class="drop-btn" @mouseover.native="menuSeen = true"></el-button>
+            <div class="drop-menu" v-if="menuSeen" @mouseleave="menuSeen = false">
+              <ul class="submenu1">
+                <li v-for="(year, i) in years" :key="i"
+                @mouseover="RollTime(i)"
+                :class="i === minY || i === maxY ? 'navi': null">
+                  <div v-if="i>=minY && i<=maxY">{{ year }}</div>
+                  <ul class="submenu2">
+                    <li v-for="(season, index) in seasons" :key="index" @click="ChangeTime(i,index)" >{{ season }}</li>
+                  </ul>
+                </li>
+              </ul>
+            </div>
+          </div>
         </div>
         <div class="location">
           <el-button class="location-back" circle size="mini" :disabled="check===0" @click="backtoHome">
@@ -55,6 +70,7 @@
                   @next-click="nextItem"
                   @prev-click="preItem"
                   :page-count="themes.length-4"
+                  :current-page="currentButton"
                 >
                 </el-pagination>
               </div>
@@ -212,6 +228,8 @@ export default {
   components: {},
   data() {
     return {
+      currentButton: 1,
+      menuSeen: false,
       radio: '',
       checkList: [],
       inputable: false,
@@ -256,32 +274,32 @@ export default {
         theme: '全部',
         count: 0
       }],
-      grades: ['大一','大二','大三','大四','研一','研二','研五'],
+      grades: ['大一','大二','大三','大四','研一','研二','研三'],
       colors: ['color1', 'color2', 'color3', 'color4', 'color5', 'color6'],
       time: ['2021', 'Autumn'],
       tableData:[],
-      years: [{
-        label: '2021'
-      },
-      {
-        label: '2022'
-      },
-      {
-        label: '2023'
-      },
-      {
-        label: '2024'
-      },
-      {
-        label: '2025'
-      },
-      {
-        label: '2026'
-      },
-      {
-        label: '2027'
-      }],
-      season: ['Spring', 'Autumn'],
+      // years: [{
+      //   label: '2021'
+      // },
+      // {
+      //   label: '2022'
+      // },
+      // {
+      //   label: '2023'
+      // },
+      // {
+      //   label: '2024'
+      // },
+      // {
+      //   label: '2025'
+      // },
+      // {
+      //   label: '2026'
+      // },
+      // {
+      //   label: '2027'
+      // }],
+      // season: ['Spring', 'Autumn'],
       stages: ['简历', '笔试', '群面', '单面', '通过'],
       isShow: false,
       popUp: false,
@@ -292,24 +310,52 @@ export default {
       text: '',
       qq_input: '',
       loading: false,
-      submitable: true
+      submitable: true,
+      years: ['-','2021','2022','2023','2024','2025','2026','2027','2028','2029','-'],
+      seasons: ['Spring','Autumn'],
+      minY: 0,
+      maxY: 5
     }
   },
   methods: {
-    // 切换时间
-    handleSelect(index, indexPath) {
-
-      this.check = 0;
-      this.tip = '';
-      this.groupIndex = -1;
-      this.stage = '';
-      this.stageIndex = -1;
-      
-      this.time[0] = indexPath[1];
-      this.time[1] = indexPath[2];
-      this.getGroupInfo();
-      this.getCandidateInfo(this.groupIndex, 0, this.stage)
+    RollTime(i) {
+      if(i === this.minY ) {
+        if(this.minY >= 1) {
+          setTimeout(()=> {
+            this.minY--;
+            this.maxY--;
+          },700)
+        }
+      } else if(i === this.maxY) {
+        if(this.maxY <= this.years.length-2) {
+          setTimeout(()=> {
+            this.minY++;
+            this.maxY++;
+          },700)
+        }
+      }
     },
+    // 切换时间
+    ChangeTime(i, index) {
+      this.time[0] = this.years[i];
+      this.time[1] = this.seasons[index];
+      this.backtoHome();
+      this.menuSeen = false;
+    },
+    // 切换时间
+    // handleSelect(index, indexPath) {
+
+    //   this.check = 0;
+    //   this.tip = '';
+    //   this.groupIndex = -1;
+    //   this.stage = '';
+    //   this.stageIndex = -1;
+      
+    //   this.time[0] = indexPath[1];
+    //   this.time[1] = indexPath[2];
+    //   this.getGroupInfo();
+    //   this.getCandidateInfo(this.groupIndex, 0, this.stage)
+    // },
     // 切换到对应组别下的流程
     getStage(i) {
       this.check = 1;
@@ -336,10 +382,12 @@ export default {
     nextItem() {
       this.max++;
       this.min++;
+      this.currentButton ++;
     },
     preItem() {
       this.max--;
       this.min--;
+      this.currentButton --;
     },
     // 切换候选人表单页码
     nextPage() {
@@ -357,6 +405,9 @@ export default {
       this.groupIndex = -1;
       this.stage = '';
       this.stageIndex = -1;
+      this.max = 4;
+      this.min = 0;
+      this.currentButton = 1;
       this.getGroupInfo();
       this.getCandidateInfo(-1, 0, '');
     },
@@ -463,6 +514,7 @@ export default {
         this.getStageInfo(this.groupIndex);
         this.min = 0;
         this.max = 4;
+        this.currentButton = 1;
       }).catch((err) => {
         console.log(err);
       });
@@ -509,6 +561,7 @@ export default {
             alert('短信发送成功！');
             this.loading = false;
             this.submitable = true;
+            this.centerDialogVisible = false;
             this.getStageInfo(this.groupIndex);
             this.getCandidateInfo(this.groupIndex, 0, this.stage);
           }).catch((err) => {
@@ -525,6 +578,7 @@ export default {
             alert('短信发送成功！');
             this.loading = false;
             this.submitable = true;
+            this.centerDialogVisible = false;
             this.getStageInfo(this.groupIndex);
             this.getCandidateInfo(this.groupIndex, 0, this.stage);
           }).catch((err) => {
@@ -540,6 +594,7 @@ export default {
             alert('短信发送成功！');
             this.loading = false;
             this.submitable = true;
+            this.centerDialogVisible = false;
             this.getStageInfo(this.groupIndex);
             this.getCandidateInfo(this.groupIndex, 0, this.stage);
           }).catch((err) => {
@@ -558,8 +613,6 @@ export default {
   watch: {
     check() {
       this.currentPage = 1;
-      this.max = 4;
-      this.min = 0;
       this.isShow = false;
       this.popUp = false;
       this.textUp = false;
@@ -592,11 +645,17 @@ export default {
   -webkit-user-select: none;
   -ms-user-select: none;
 }
+.drop {
+  user-select: none;
+  -moz-user-select: none;
+  -webkit-user-select: none;
+  -ms-user-select: none;
+}
 .head-bar {
   position: relative;
   height: 114px;
   width: 100%;
-  border-bottom: 1px solid #8D8D8D;
+  border-bottom: 1px solid rgb(227, 227, 227);
   padding: 0 !important;
   .head-bar_left {
     display: flex;
@@ -1045,5 +1104,78 @@ export default {
 }
 .selected {
   background: rgba(0, 153, 250, 0.152344) !important;
+}
+// .drop-btn {
+//   margin-left: 10px !important;
+//   padding: 0 !important;
+//   margin-top: 10px !important;
+//   color: #9a9b9c !important;
+// }
+// .drop-btn:hover {
+//   transform: rotate(180deg);
+// }
+.drop {
+  position: relative;
+  margin-left: 10px;
+  z-index: 1000;
+  .drop-btn {
+    padding: 0 !important;
+    margin-top: 15px !important;
+    color: #9a9b9c !important;
+
+  }
+  .drop-btn:hover {
+    transform: rotate(180deg);
+  }
+  .drop-menu {
+    position: absolute;
+    // left: 240px;
+    // top: 45px;
+    // z-index: 1000;
+    ul {
+      list-style: none;
+      background: #fff;
+      width: 58px;
+      padding: 0 !important;
+      text-align: center;
+      box-shadow: 4px 4px 15px rgba(0, 0, 0, 0.25);
+      border-radius: 5px;
+    }
+    li {
+      cursor: pointer;
+      font-family: Roboto;
+      font-style: normal;
+      font-weight: normal;
+      font-size: 12px;
+      line-height: 25px;
+      color: #000000;
+    }
+    li:hover {
+      background-color: #ECF0FF;
+    }
+    .submenu2 {
+      display: none;
+      z-index: 10000;
+      position: absolute;
+      margin-left: 55px;
+      margin-top: -20px;
+      background: #fff;
+      width: 102px;
+      box-shadow: 0px 4px 15px rgba(0, 0, 0, 0.25);
+    }
+    .submenu1 li:hover .submenu2 {
+      display: block;
+    }
+    .navi {
+      font-size: 12px;
+      transform: scale(.9);
+      color: #6E7073;
+      cursor: default;
+      background: #fff !important;
+    }
+    .navi .submenu2 {
+      display: none !important;
+    }
+  }
 }
 </style>
