@@ -146,8 +146,9 @@
               <el-table-column
                 label="报名材料"
                 prop="work_url">
+
                 <template slot-scope="scope">
-                   <v-icon class="download" @click="download(scope.row.work_key)">mdi-download</v-icon>
+                   <v-icon class="download" @click="downloadAll(scope.row.resume_key,scope.row.work_key)">mdi-download</v-icon>
                 </template>
                
               </el-table-column>
@@ -374,12 +375,21 @@ export default {
       this.stage = this.themes[this.stageIndex].theme;
       this.getCandidateInfo(this.groupIndex, 0, this.stage);
     },
+    async downloadAll(key1,key2){
+      console.log(key1,key2)
+      if (key1) {
+        await this.download(key1)
+      }
+      if (key2) {
+        await this.download(key2)
+      }
+    },
     // 下载文件
     async download(key) {
       const url = await getDownloadLink(key);
       // console.log(url);
       // 不要直接给href赋值，正确做法是开个新tab下载
-      window.open(url,"_blank")
+      window.open(url)
     },
     // 流程按钮的移动
     nextItem() {
