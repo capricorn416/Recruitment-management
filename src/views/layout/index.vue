@@ -172,7 +172,7 @@
         <el-button icon="el-icon-circle-plus" class="new-button" :disabled="!newState" @click="popUp = true">更新状态</el-button>
         <el-card class="new-card" v-if="popUp">
           <el-radio-group v-model="radio" @change="handleChange">
-            <el-radio label="pass">通过</el-radio>
+            <el-radio label="pass">下一阶段</el-radio>
             <el-radio label="disuse">淘汰</el-radio>
             <el-radio label="finalpass">最终通过</el-radio>
           </el-radio-group> 
@@ -274,7 +274,7 @@ export default {
         theme: '全部',
         count: 0
       }],
-      grades: ['大一','大二','大三','大四','研一','研二','研三'],
+      grades: ['大一','大二','大三','大四','研一','研二','研三','其他'],
       colors: ['color1', 'color2', 'color3', 'color4', 'color5', 'color6'],
       time: ['2021', 'Autumn'],
       tableData:[],
@@ -1006,14 +1006,12 @@ export default {
   .new-card {
     margin-left: 29px;
     margin-top: 73px;
-    // .el-checkbox {
-    //   margin-right: 20px;
-    //   .el-checkbox__label {
-    //     padding-left: 5px;
-    //   }
-    // }
+    .el-card__body {
+      padding: 15px;
+      padding-right: 10px;
+    }
     .el-radio {
-      margin-right: 20px;
+      margin-right: 15px;
     }
     .el-radio__inner {
       border-radius: 0;
