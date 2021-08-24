@@ -35,3 +35,6 @@ export const getCandidate = (params) => {
     }
   })
 }
+export const getDownloadLink = async (key)=>{
+  return (await request.get('/recruit/download?key='+key)).data.url
+}

@@ -147,7 +147,7 @@
                 label="报名材料"
                 prop="work_url">
                 <template slot-scope="scope">
-                   <v-icon class="download" @click="download(scope.row.work_url)">mdi-download</v-icon>
+                   <v-icon class="download" @click="download(scope.row.work_key)">mdi-download</v-icon>
                 </template>
                
               </el-table-column>
@@ -220,7 +220,7 @@
 </template>
 
 <script>
-import { getGroupCount, getStageCount, getCandidate } from '@/api/getInfo.js'
+import { getGroupCount, getStageCount, getCandidate, getDownloadLink } from '@/api/getInfo.js'
 import { addStage, deleteStage, getTemplate, pass, finalPass, disuse } from '@/api/edit.js'
 
 export default {
@@ -375,9 +375,11 @@ export default {
       this.getCandidateInfo(this.groupIndex, 0, this.stage);
     },
     // 下载文件
-    download(url) {
+    async download(key) {
+      const url = await getDownloadLink(key);
       // console.log(url);
-      window.location.href = url;
+      // 不要直接给href赋值，正确做法是开个新tab下载
+      window.open(url,"_blank")
     },
     // 流程按钮的移动
     nextItem() {
