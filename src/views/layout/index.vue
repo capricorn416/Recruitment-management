@@ -986,7 +986,6 @@ export default {
   letter-spacing: 1.25px;
   color: #0F85DA;
 }
-
 .el-submenu__title:hover {
   color: #ECF0FF !important;
 }
@@ -1014,6 +1013,13 @@ export default {
     .el-icon-circle-plus {
       margin-right: 10px;
     }
+  }
+  button.is-disabled {
+    color: #C0C4CC;
+    cursor: not-allowed;
+    background-image: none;
+    background-color: #FFF;
+    border-color: #EBEEF5;
   }
   .new-card {
     margin-left: 29px;
