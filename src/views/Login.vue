@@ -1,7 +1,13 @@
 <template>
+<div>
+<div class="headbar">
+  <div class="box">
+  <p>Pivot Studio</p><p class="p1"> 招新系统</p>
+  </div>
+  </div>
   <div class="center">
-    <div class="headbar"><p>Pivot Studio</p><p class="p1"> 招新系统</p></div>
-    <img src="../assets/pic.png" />
+    
+    
     <div 
     class="login" 
     :model="loginForm"
@@ -33,13 +39,14 @@
 
       <button class="log" @click="signIn">登 入</button>
     </div>
-
+   <img src="../assets/pic.png" />
     
 
-    <div class="block">
+    <!-- <div class="block">
       <el-pagination layout="prev, pager, next" :total="500"> </el-pagination>
-    </div>
+    </div> -->
     <img src="../assets/logo2.png" class="logo" />
+  </div>
   </div>
 </template>
 
@@ -76,6 +83,7 @@ export default {
       sendVerifyCode(formData)
      
         .then((result) => {
+          this.message = ''
           console.log(result);
           const TIME_COUNT = 60;
           if (!this.loginForm.timer) {
@@ -105,7 +113,7 @@ export default {
             console.log(this.message);
           }
           else{
-            this.message="*对不起，您没有登录权限";
+            this.message='*'+err.response.data.msg;;
              console.log(this.message);
           }
         });
@@ -134,66 +142,69 @@ export default {
 <style scoped>
 .center {
   position: relative;
-  width: 1440px;
+  width: 95%;
+  height:auto!important;
+height:780px;
+max-height:780px;
   margin: 0 auto;
   
 }
 @keyframes heart{
-from{transform:translate(0,0)}
-to{transform:translate(0,-12px)}
+from{opacity: 0}
+to{opacity: 1}
 }
 .headbar {
-  position: absolute;
-  width: 1440px;
+  
+ width: 100%;
   height: 107px;
-  left: 0px;
-  top: 0px;
-
   background: #2f2e41;
   border-radius: 0px 0px 12px 12px;
-  
+  text-align: center;
 
 }
-.headbar p {
-  position: absolute;
-  width: 566px;
-  height: 64px;
-  left: 422px;
+.headbar .box{
+   position: absolute;
+   right: 30%;
   top: 21px;
+}
+.headbar p {
+  /* position: absolute; */
+  float:left;
+  width: 312px;
+  height: 64px;
 font-style: italic;
   font-family: Segoe UI;
   
   font-weight: normal;
   font-size: 60px;
   line-height: 64px;
-  /* identical to box height, or 107% */
 
   color: #ffffff;
 }
 .headbar .p1{
    font-style: normal;
-   left:748px ;
-   top:21px;
+   
 }
 .center img {
   position: absolute;
   width: 777.7px;
   height: 613.29px;
   left: 52px;
-  top: 276px;
+  top: 169px;
 }
 .login {
   position: absolute;
   width: 450px;
   height: 296px;
-  left: 866px;
-  top: 310px;
-
+  
+  top: 203px;
+ right: 9%;
+ z-index: 2;
   background: #e6e6e6;
   box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
   border-radius: 15px;
-  animation: heart 1s ease-in-out 2.6s infinite alternate;
-  animation-iteration-count :6;
+  animation: heart 5s linear 1;
+  
 }
 .tel {
   position: absolute;
@@ -219,7 +230,8 @@ padding-left: 20px;
   position: absolute;
   width: 139px;
   height: 68px;
-  left: calc(100vw - 139px - 25px);
+ left: 90%;
+  
   top: 935px;
 }
 .log {
