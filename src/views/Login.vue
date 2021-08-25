@@ -31,7 +31,7 @@
         class="btn1" 
         v-if="loginForm.showloginCode"
         @click="sendVerifyCode">发送验证码</button>
-        <div  v-else  class="btn2">  再次发送（{{ loginForm.count }}S）</div>
+        <div  v-else  class="btn2">  再次发送({{ loginForm.count }}S)</div>
       <div class="tips">
            {{message}}
       </div>
@@ -289,7 +289,7 @@ font-style: normal;
 font-weight: normal;
 font-size: 18px;
 line-height: 42px;
- text-align: right;
+ text-align: center;
 /* or 86% */
 
 letter-spacing: 0.095em;
