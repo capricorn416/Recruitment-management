@@ -163,9 +163,9 @@ to{opacity: 1}
 
 }
 .headbar .box{
-   position: absolute;
-   right: 30%;
-  top: 21px;
+   padding-top: 21px;
+   display: flex;
+   justify-content: center;
 }
 .headbar p {
   /* position: absolute; */
