@@ -556,11 +556,10 @@ export default {
       getTemplate({
           'template_id': this.radio
         }).then((res) => {
-          // let st = ""
-          // if(this.themes[this.stageIndex+1]) {
-          //   st = this.themes[this.stageIndex+1].theme
-          // }
           this.text = res.data.msg.replace("{team}", this.tip)
+          if(this.check === 2 && this.stageIndex < this.themes.length && this.stageIndex > 1){
+            this.text = this.text.replace("{stage}", this.themes[this.stageIndex+1].theme)
+          }
         }).catch((err) => {
           console.log(err);
         }) 
@@ -1105,9 +1104,9 @@ export default {
     border-bottom: 1px solid #888;
     // padding: 2px;
     // margin-bottom: 5px;
-    width: 100px;
+    width: 95px;
     position: absolute;
-    right: 18px;
+    right: 25px;
     bottom: 69px;
     font-size: 15px;
   }
