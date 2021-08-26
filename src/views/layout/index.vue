@@ -192,7 +192,7 @@
               </div>
             </div>
             <div v-else>
-              <div v-html="text"></div>
+              <div v-html="text.replace('{qq_number}', '996295524')"></div>
             </div>
           </el-card>
           <el-button class="new-submit" @click="centerDialogVisible = true">发送</el-button>
@@ -549,14 +549,18 @@ export default {
       });
       this.stageInput = '';
     },
+    // 获得短信模板
     handleChange() {
       // console.log(this.radio);
       this.textUp = true
       getTemplate({
           'template_id': this.radio
         }).then((res) => {
-          console.log(res);
-          this.text = res.data.msg
+          // let st = ""
+          // if(this.themes[this.stageIndex+1]) {
+          //   st = this.themes[this.stageIndex+1].theme
+          // }
+          this.text = res.data.msg.replace("{team}", this.tip)
         }).catch((err) => {
           console.log(err);
         }) 
@@ -592,6 +596,7 @@ export default {
             this.loading = false;
             this.submitable = true;
             this.centerDialogVisible = false;
+            this.qq_input = '';
             this.getStageInfo(this.groupIndex);
             this.getCandidateInfo(this.groupIndex, 0, this.stage);
           }).catch((err) => {
@@ -861,12 +866,10 @@ export default {
     height: 100%;
   }
   .procedure-edit-frame {
-    // display: none;
     position: absolute;
     z-index: 10000;
     top: 65px;
     left: 145px;
-    // top: 100px;
     width: 229px;
     height: 275px;
     background: #ffffff;
@@ -874,6 +877,7 @@ export default {
     box-sizing: border-box;
     border-radius: 4px;
     position: relative;
+    z-index: 10;
     .edit-header {
       display: inline-block;
       font-family: Open Sans;
