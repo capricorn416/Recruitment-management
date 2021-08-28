@@ -371,6 +371,7 @@ export default {
     pickStage(index) {
       this.check = 2;
       console.log(index);
+      this.currentPage = 1;
       this.stageIndex = index;
       this.stage = this.themes[this.stageIndex].theme;
       this.getCandidateInfo(this.groupIndex, 0, this.stage);
