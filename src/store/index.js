@@ -24,8 +24,7 @@ const store = new Vuex.Store({
       title: '移动组',
       count: 0
     }],
-    time: ['2021', 'Autumn'],
-    back: false
+    time: ['2021', 'Autumn']
   },
   mutations: {
     updateGroup_num(state, val) {
