@@ -1,6 +1,5 @@
 import Vue from 'vue'
 import VueRouter from 'vue-router'
-import Layout from '../views/layout'
 import Home from '../views/Home.vue'
 import Group from '../views/Group.vue'
 import Login from '../views/Login.vue'
@@ -9,19 +8,11 @@ Vue.use(VueRouter)
 const routes = [
   {
     path: '/',
-    component: Layout,
-    children: [
-      {
-        path: '', // path为空，会作为默认子路由渲染
-        name: 'home',
-        component: Home
-      },
-      {
-        path: '/group',
-        name: 'group',
-        component: Group
-      }
-    ]
+    component: Home,
+  },
+  {
+    path: '/group',
+    component: Group
   },
   {
     path: '/login',

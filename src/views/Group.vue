@@ -1,12 +1,12 @@
 <template>
   <div id="group">
+    <Headbar @SelectTime = "changeTime" :tip="groupTitle"/>
     <div class="main">
           <h1>本次招新数据</h1>
-
           <div class="procedure">
             <div  class="procedure-buttons">
               <el-button class="group-button"
-              :class="stageIndex === -1 ? 'selected': null">
+              :class="stageIndex === -1 ? 'selected': null" @click="backtoGroupHome">
                 <h2>全部</h2>
                 <p>{{$store.state.group_sum[groupIndex-1].count}}</p>
               </el-button>
@@ -52,6 +52,7 @@
             <el-table
               :data="tableData"
               style="width: 100%"
+              @selection-change="handleSelectionChange"
               >
                <el-table-column
                 type="selection"
@@ -121,20 +122,69 @@
             </div>
           </el-card>
     </div>
+
+      <div class="left">
+        <el-button icon="el-icon-circle-plus" class="new-button" :disabled="!newState" @click="popUp = true">更新状态</el-button>
+        <el-card class="new-card" v-if="popUp">
+          <el-radio-group v-model="radio" @change="handleChange">
+            <el-radio label="pass">下一阶段</el-radio>
+            <el-radio label="disuse">淘汰</el-radio>
+            <el-radio label="finalpass">最终通过</el-radio>
+          </el-radio-group> 
+        </el-card>
+
+        <div  v-if="textUp">
+          <el-card class="new-text">
+            <div slot="header">
+              请调整短信内容
+            </div>
+            <div v-if="radio === 'pass'">
+              <div v-html="text1" class="text1">
+              </div>
+              <input type="text" class="qq-input" v-model="qq_input"/>
+              <div v-html="text2">
+              </div>
+            </div>
+            <div v-else>
+              <div v-html="text.replace('{qq_number}', '996295524')"></div>
+            </div>
+          </el-card>
+          <el-button class="new-submit" @click="centerDialogVisible = true">发送</el-button>
+          <el-dialog
+            title="短信发送确认"
+            :visible.sync="centerDialogVisible"
+            width="30%"
+            center>
+            <span>
+              <p>
+                您确认向以下{{ candidateSelected.length }}位同学：<br>
+                {{ candidateSelected_name.join(', ') }}<br>
+                发送信息吗？
+              </p>
+            </span>
+            <span slot="footer" class="dialog-footer">
+              <el-button @click="centerDialogVisible = false" class="quit_button">取消</el-button>
+              <el-button @click="submit" class="submit_button" :loading="loading" :disabled="!submitable">确定发送</el-button>
+            </span>
+          </el-dialog>
+        </div>
+      </div>
   </div>
 </template>
 
 <script>
+import Headbar from './Headbar/index.vue'
 import { getStageCount, getCandidate, getDownloadLink } from '@/api/getInfo.js'
 import { addStage, deleteStage, getTemplate, pass, finalPass, disuse } from '@/api/edit.js'
 
 export default {
   name: 'LayoutIndex',
-  components: {},
+  components: {
+    Headbar
+  },
   data() {
     return {
       currentButton: 1,
-      menuSeen: false,
       radio: '',
       checkList: [],
       inputable: false,
@@ -153,7 +203,7 @@ export default {
       themes: [],
       grades: ['大一','大二','大三','大四','研一','研二','研三','其他'],
       colors: ['color1', 'color2', 'color3', 'color4', 'color5', 'color6'],
-      time: ['2021', 'Autumn'],
+      time: this.$store.state.time,
       tableData:[],
       isShow: false,
       popUp: false,
@@ -168,6 +218,16 @@ export default {
     }
   },
   methods: {
+    changeTime() {
+      this.time = this.$store.state.time;
+      this.$store.dispatch('getGroup_num', {
+        "year": this.time[0],
+        "season": this.time[1]
+      })
+      this.getCandidateInfo(this.groupIndex, 0, '')
+      this.getStageInfo(this.groupIndex)
+      this.stageIndex = -1
+    },
     async downloadAll(key1,key2){
       console.log(key1,key2)
       if (key1) {
@@ -233,6 +293,7 @@ export default {
     gradeCheck(row, column) {
       return this.grades[row.grade-1]
     },
+    // 删除流程
     stageRemove(index) {
       let data = {
         "year": this.time[0],
@@ -257,7 +318,6 @@ export default {
         "group": this.groupIndex,
         "stage": this.stageInput
       }
-      console.log(data);
       addStage(data).then((res) => {
         this.getStageInfo(this.groupIndex);
       }).catch((err) => {
@@ -279,21 +339,139 @@ export default {
     // 切换到对应流程
     pickStage(index) {
       this.stageIndex = index;
+      this.currentPage = 1;
+      this.qq_input = ''
       this.stage = this.themes[this.stageIndex].theme;
       this.getCandidateInfo(this.groupIndex, 0, this.stage);
     },
+    // 返回全部
+    backtoGroupHome() {
+      this.stage = '';
+      this.currentPage = 1;
+      this.stageIndex = -1;
+      this.getCandidateInfo(this.groupIndex, 0, '');
+    },
+    // 选中报名者
+    handleSelectionChange(val) {
+      if(val.length === 0){
+        this.newState = false;
+        this.textUp = false;
+        this.popUp = false;
+        this.radio = ''
+      }
+      else {
+        this.newState = true;
+        this.candidateSelected = val;
+        let id = [];
+        let name = [];
+        this.candidateSelected.forEach((item) => {
+          id.push(item.id);
+          name.push(item.name);
+        })
+        this.candidateSelected_id = id;
+        this.candidateSelected_name = name;
+      }
+    },
+    // 获得短信模板
+    handleChange() {
+      this.textUp = true
+      getTemplate({
+          'template_id': this.radio
+        }).then((res) => {
+          this.text = res.data.msg.replace("{team}", this.$store.state.group_sum[this.groupIndex-1].title)
+          if(this.stageIndex < this.themes.length && this.stageIndex > 1){
+            this.text = this.text.replace("{stage}", this.themes[this.stageIndex+1].theme)
+          }
+        }).catch((err) => {
+          console.log(err);
+      }) 
+    },
+    // 发送短信
+    submit() {
+      this.loading = true;
+      this.submitable = false;
+      switch (this.radio) {
+        case "pass":
+          pass({
+            "candidates_id": this.candidateSelected_id,
+            "qq_number": this.qq_input
+          }).then((res) => {
+            alert('短信发送成功！');
+            this.loading = false;
+            this.submitable = true;
+            this.centerDialogVisible = false;
+            this.currentPage = 1;
+            this.getStageInfo(this.groupIndex);
+            this.getCandidateInfo(this.groupIndex, 0, this.stage);
+          }).catch((err) => {
+            alert('短信发送失败！'+ err.response.data.msg);
+            this.loading = false;
+            this.submitable = true;
+          });
+          break;
+        case "disuse": 
+          disuse({
+            "candidates_id": this.candidateSelected_id
+          }).then((res) => {
+            alert('短信发送成功！');
+            this.loading = false;
+            this.submitable = true;
+            this.centerDialogVisible = false;
+            this.currentPage = 1;
+            this.qq_input = '';
+            this.getStageInfo(this.groupIndex);
+            this.getCandidateInfo(this.groupIndex, 0, this.stage);
+          }).catch((err) => {
+            alert('短信发送失败！'+ err.response.data.msg);
+            this.loading = false;
+            this.submitable = true;
+          });
+          break;
+        case "finalpass":
+          finalPass({
+            "candidates_id": this.candidateSelected_id
+          }).then((res) => {
+            alert('短信发送成功！');
+            this.loading = false;
+            this.submitable = true;
+            this.centerDialogVisible = false;
+            this.currentPage = 1;
+            this.getStageInfo(this.groupIndex);
+            this.getCandidateInfo(this.groupIndex, 0, this.stage);
+          }).catch((err) => {
+            alert('短信发送失败！'+ err.response.data.msg);
+            this.loading = false;
+            this.submitable = true;
+          });
+          break;
+      }
+    }
   },
   created() {
     this.getCandidateInfo(this.groupIndex, 0, '');
     this.getStageInfo(this.groupIndex)
   },
   mounted() {
-    this.$store.dispatch('getGroup_num')
+    this.$store.dispatch('getGroup_num', {
+      "year": this.time[0],
+      "season": this.time[1]
+    })
+  },
+  computed: {
+    text1() {
+      return this.text.split('{qq_number}')[0]
+    },
+    text2() {
+      return this.text.split('{qq_number}')[1]
+    },
+    groupTitle() {
+      return '- ' + this.$store.state.group_sum[this.groupIndex-1].title
+    }
   }
 }
 </script>
 
-<style scoped lang="less">
+<style lang="less">
 .head-bar_time, .location, .main h1 {
   cursor: default;
   user-select: none;
@@ -301,110 +479,6 @@ export default {
   -webkit-user-select: none;
   -ms-user-select: none;
 }
-.drop {
-  user-select: none;
-  -moz-user-select: none;
-  -webkit-user-select: none;
-  -ms-user-select: none;
-}
-.head-bar {
-  position: relative;
-  height: 114px;
-  width: 100%;
-  border-bottom: 1px solid rgb(227, 227, 227);
-  padding: 0 !important;
-  .head-bar_left {
-    display: flex;
-    align-items: center;
-  }
-
-  img {
-    margin-top: 8px;
-    margin-left: 16px;
-  }
-  .head-bar_time {
-    display: inline;
-    border: none !important;
-    font-family: Racing Sans One;
-    font-style: normal;
-    font-weight: normal;
-    font-size: 24px;
-    line-height: 28px;
-    letter-spacing: 0.15px;
-    color: #5E6366;
-    margin-left: 16px;
-    position: relative;
-    top: 12px;
-  }
-  .el-menu.el-menu--horizontal {
-    border-bottom: none;
-    padding: 0;
-    position: relative;
-    top: 6px;
-  }
-  .el-submenu__title {
-    padding: 0 10px;
-    height: 30px !important;
-    line-height: 30px !important;
-  }
-  // .el-input__icon {
-  //   color: #5E6366;
-  // }
-  .location {
-    position: absolute;
-    bottom: 3px;
-    left: 35px;
-    .location-back {
-      border: none;
-      background: none;
-      font-size: 16px;
-    }
-    // .location-back:hover {
-    //   color: rgba(0, 122, 255, 0.5);
-    // }
-    p {
-      font-family: Segoe UI;
-      font-style: normal;
-      font-weight: normal;
-      font-size: 16px;
-      color: #757575;
-      display: inline;
-      letter-spacing: 0.02em;
-      margin-left: -5px;
-    }
-  }
-
-}
-.el-menu--popup {
-  min-width: 58px !important;
-  // height: 151px !important;
-  .el-icon-arrow-right {
-    display: none !important;
-  }
-}
-
-.el-submenu .el-menu-item {
-  min-width: 100px !important;
-}
-// .el-submenu__title:hover {
-//   color: rgba(0, 122, 255, 0.12) !important;
-// }
-.el-menu--horizontal>.el-submenu.is-active .el-submenu__title {
-  border-bottom: none !important;
-}
-.el-submenu.is-active .el-submenu__title {
-  border-bottom: none !important;
-}
-// .el-cascader-menu {
-//   min-width: 58px !important;
-//   color: #000000 !important;
-//   font-family: Roboto;
-//   font-style: normal;
-//   font-weight: normal;
-//   font-size: 12px;
-//   line-height: 14px;
-// }
-
 .main {
   position: relative;
   left: 350px;
@@ -763,78 +837,5 @@ export default {
 }
 .selected {
   background: rgba(0, 153, 250, 0.152344) !important;
-}
-// .drop-btn {
-//   margin-left: 10px !important;
-//   padding: 0 !important;
-//   margin-top: 10px !important;
-//   color: #9a9b9c !important;
-// }
-// .drop-btn:hover {
-//   transform: rotate(180deg);
-// }
-.drop {
-  position: relative;
-  margin-left: 10px;
-  z-index: 1000;
-  .drop-btn {
-    padding: 0 !important;
-    margin-top: 15px !important;
-    color: #9a9b9c !important;
-
-  }
-  .drop-btn:hover {
-    transform: rotate(180deg);
-  }
-  .drop-menu {
-    position: absolute;
-    // left: 240px;
-    // top: 45px;
-    // z-index: 1000;
-    ul {
-      list-style: none;
-      background: #fff;
-      width: 58px;
-      padding: 0 !important;
-      text-align: center;
-      box-shadow: 4px 4px 15px rgba(0, 0, 0, 0.25);
-      border-radius: 5px;
-    }
-    li {
-      cursor: pointer;
-      font-family: Roboto;
-      font-style: normal;
-      font-weight: normal;
-      font-size: 12px;
-      line-height: 25px;
-      color: #000000;
-    }
-    li:hover {
-      background-color: #ECF0FF;
-    }
-    .submenu2 {
-      display: none;
-      z-index: 10000;
-      position: absolute;
-      margin-left: 55px;
-      margin-top: -20px;
-      background: #fff;
-      width: 102px;
-      box-shadow: 0px 4px 15px rgba(0, 0, 0, 0.25);
-    }
-    .submenu1 li:hover .submenu2 {
-      display: block;
-    }
-    .navi {
-      font-size: 12px;
-      transform: scale(.9);
-      color: #6E7073;
-      cursor: default;
-      background: #fff !important;
-    }
-    .navi .submenu2 {
-      display: none !important;
-    }
-  }
 }
 </style>

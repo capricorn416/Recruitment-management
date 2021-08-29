@@ -1,5 +1,6 @@
 <template>
   <div id="home">
+    <headbar @SelectTime = "changeTime" :tip = "groupTitle"/>
     <div class="main">
           <h1>本次招新数据</h1>
           <!-- 所有候选人 -->
@@ -88,11 +89,14 @@
 </template>
 
 <script>
+import Headbar from './Headbar/index.vue'
 import { getGroupCount, getCandidate, getDownloadLink } from '@/api/getInfo.js'
 
 export default {
   name: 'LayoutIndex',
-  components: {},
+  components: {
+    Headbar
+  },
   data() {
     return {
       checkList: [],
@@ -104,11 +108,19 @@ export default {
       groups: [],
       grades: ['大一','大二','大三','大四','研一','研二','研三','其他'],
       colors: ['color1', 'color2', 'color3', 'color4', 'color5', 'color6'],
-      time: ['2021', 'Autumn'],
+      time: this.$store.state.time,
       tableData:[]
     }
   },
   methods: {
+    changeTime() {
+      this.time = this.$store.state.time
+      this.$store.dispatch('getGroup_num', {
+        "year": this.time[0],
+        "season": this.time[1]
+      })
+      this.getCandidateInfo(-1, 0, "")
+    },
     getStage(i) {
       this.$router.push({path: '/group', query: { groupIndex: i+1 }})
     },
@@ -171,12 +183,38 @@ export default {
     this.getCandidateInfo(-1, 0, '');
   },
   mounted() {
-    this.$store.dispatch('getGroup_num')
+    this.$store.dispatch('getGroup_num', {
+      "year": this.time[0],
+      "season": this.time[1]
+    })
+  },
+  computed: {
+    groupTitle() {
+      return ""
+    }
   }
 }
 </script>
 
 <style scoped lang="less">
+.color1 p {
+  color: red;
+}
+.color2 p {
+  color: orange;
+}
+.color3 p {
+  color: yellow;
+}
+.color4 p {
+  color: green;
+}
+.color5 p {
+  color: blue;
+}
+.color6 p {
+  color: purple;
+}
 .main {
   position: relative;
   left: 350px;
@@ -190,7 +228,6 @@ export default {
     line-height: 42px;
     color: rgba(0, 0, 0, 0.87);
   }
-
   .group-button {
     width: 138px;
     height: 115px;
@@ -221,126 +258,6 @@ export default {
   .group-button:hover {
     background-color: rgba(0, 122, 255, 0.12);
   }
-  .procedure {
-    position: relative;
-  }
-  .procedure-switch {
-    position: absolute;
-    display: inline;
-    right: -10px;
-    top: 60px;
-    .el-icon {
-      font-size: 38px !important;
-    }
-    .btn-prev, .btn-next {
-      width: 30px;
-      height: 40px;
-      min-width: 10px !important;
-      background: none !important;
-    }
-    .btn-prev:hover {
-      background: none
-    }
-    .btn-next:hover {
-      background: none
-    }
-  }
-  .procedure-edit {
-    position: absolute;
-    right: 0;
-    width: 400px;
-    
-  }
-  .procedure-edit-button {
-    float: right;
-    margin-top: 20px;
-    margin-right: 40px;
-    border: 2px solid #7fb6dd;
-    color:  #0F85DA;
-    font-family: Roboto;
-    font-style: normal;
-    font-weight: 500;
-    font-size: 14px;
-    // line-height: 16px;
-    padding: 8px 18px;
-    /* identical to box height, or 114% */
-    letter-spacing: 1.25px;
-  }
-  .el-scrollbar {
-    height: 100%;
-  }
-  .el-scrollbar__wrap {
-    overflow-y: scroll;
-    overflow-x: hidden;
-    width: 110%;
-    height: 100%;
-  }
-  .procedure-edit-frame {
-    position: absolute;
-    z-index: 10000;
-    top: 65px;
-    left: 145px;
-    width: 229px;
-    height: 275px;
-    background: #ffffff;
-    border: 1px solid #757575;
-    box-sizing: border-box;
-    border-radius: 4px;
-    position: relative;
-    z-index: 10;
-    .edit-header {
-      display: inline-block;
-      font-family: Open Sans;
-      font-style: normal;
-      font-weight: bold;
-      font-size: 18px;
-      line-height: 16px;
-      color: #3F3D56;
-      margin-top: 14px;
-      margin-left: 32px;
-      
-    }
-    .close-button {
-      float: right;
-      margin: 10px 25px 0 0;
-      font-size: 10px;
-    }
-    .remove-button {
-      float: right;
-      margin: -7px 30px 0 0;
-      // border: 2px solid #757575;
-      // font-size: 10px;
-      color: #b1aeae;
-      font-size: 30px;
-      font-weight: 400;
-    }
-    .remove-button:hover {
-      font-weight: 700;
-      color: #757575;
-      cursor: pointer;
-    }
-    .edit-stage {
-      list-style: none;
-      padding: 0;
-      margin-left: 32px;
-      margin-top: 27px;
-      li {
-        margin-bottom: 20px;
-        font-family: Open Sans;
-        font-style: normal;
-        font-weight: normal;
-        font-size: 18px;
-        line-height: 16px;
-        color: #2C2C2C;
-      }
-      input {
-        width: 79px;
-        border-bottom: 1px solid #000;
-        outline: none;
-        padding-bottom: 3px;
-      }
-    }
-  }
   .table {
     margin-top: 73px;
     margin-bottom: 80px;    
@@ -350,21 +267,6 @@ export default {
   }
   .el-table th>.cell {
     padding-left: 14px;
-  }
-  .block {
-    float: right;
-    margin: 20px 0;
-    position: relative;
-    p {
-      position: absolute;
-      right: 100px;
-      top: 5px;
-      font-family: Open Sans;
-      font-style: normal;
-      font-weight: normal;
-      font-size: 12px;
-      color: rgba(0, 0, 0, 0.5);
-    }
   }
 }
 </style>

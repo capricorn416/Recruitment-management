@@ -126,7 +126,7 @@ export default {
         .then((res) => {
           window.localStorage.setItem("user", res.data.token);
           this.$router.push({
-            name: "layout",
+            path: '/'
           });
         })
         .catch((err) => {
