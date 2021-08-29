@@ -579,6 +579,7 @@ export default {
             this.loading = false;
             this.submitable = true;
             this.centerDialogVisible = false;
+            this.currentPage = 1;
             this.getStageInfo(this.groupIndex);
             this.getCandidateInfo(this.groupIndex, 0, this.stage);
           }).catch((err) => {
@@ -596,6 +597,7 @@ export default {
             this.loading = false;
             this.submitable = true;
             this.centerDialogVisible = false;
+            this.currentPage = 1;
             this.qq_input = '';
             this.getStageInfo(this.groupIndex);
             this.getCandidateInfo(this.groupIndex, 0, this.stage);
@@ -613,6 +615,7 @@ export default {
             this.loading = false;
             this.submitable = true;
             this.centerDialogVisible = false;
+            this.currentPage = 1;
             this.getStageInfo(this.groupIndex);
             this.getCandidateInfo(this.groupIndex, 0, this.stage);
           }).catch((err) => {
