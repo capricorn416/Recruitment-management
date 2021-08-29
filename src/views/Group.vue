@@ -1,62 +1,16 @@
 <template>
-  <div>
-      <div class="head-bar">
-        <div class="head-bar_left">
-          <img src="~assets/logo.png" width="40px">
-          <p class="head-bar_time">{{ time.join('-') }}</p>
-          <!-- <el-menu mode="horizontal" @select="handleSelect">
-            <el-submenu class="sub" index=1>
-              <el-submenu :index="item.label" v-for="(item, i) in years" :key="i">
-                <template slot="title">{{item.label}}</template>
-                <el-menu-item :index="season[0]">Spring</el-menu-item>
-                <el-menu-item :index="season[1]">Autumn</el-menu-item>
-              </el-submenu>
-            </el-submenu>
-          </el-menu> -->
-          <div class="drop">
-          <el-button type="text" icon="el-icon-caret-bottom" class="drop-btn" @mouseover.native="menuSeen = true"></el-button>
-            <div class="drop-menu" v-if="menuSeen" @mouseleave="menuSeen = false">
-              <ul class="submenu1">
-                <li v-for="(year, i) in years" :key="i"
-                @mouseover="RollTime(i)"
-                :class="i === minY || i === maxY ? 'navi': null">
-                  <div v-if="i>=minY && i<=maxY">{{ year }}</div>
-                  <ul class="submenu2">
-                    <li v-for="(season, index) in seasons" :key="index" @click="ChangeTime(i,index)" >{{ season }}</li>
-                  </ul>
-                </li>
-              </ul>
-            </div>
-          </div>
-        </div>
-        <div class="location">
-          <el-button class="location-back" circle size="mini" :disabled="check===0" @click="backtoHome">
-            <i class="el-icon-caret-left"></i>
-          </el-button>
-          <p> 首页 </p> <p v-if="check !== 0">{{ "-" + tip }}</p> 
-        </div>
-      </div>
-
-      <div class="main">
+  <div id="group">
+    <Headbar @SelectTime = "changeTime" :tip="groupTitle"/>
+    <div class="main">
           <h1>本次招新数据</h1>
-          <!-- 所有候选人 -->
-          <div v-if="check ===  0">
-            <el-button v-for="(group, i) in groups" :key="i"
-             class="group-button" :class="colors[i]" @click="getStage(i)">
-              <h2>{{ group.title }}</h2>
-              <p>{{ group.count }}</p>
-            </el-button>
-          </div>
-
-          <!-- 切换到对应组别下的流程 -->
           <div class="procedure">
-            <div  class="procedure-buttons" v-if="check === 1 || check === 2" >
-              <el-button class="group-button" @click="backtoGroupHome(groups[groupIndex-1])" 
-              :class="stageIndex === -1 ? 'selected': null">
+            <div  class="procedure-buttons">
+              <el-button class="group-button"
+              :class="stageIndex === -1 ? 'selected': null" @click="backtoGroupHome">
                 <h2>全部</h2>
-                <p>{{ groups[groupIndex-1].count }}</p>
+                <p>{{$store.state.group_sum[groupIndex-1].count}}</p>
               </el-button>
-              <div v-if="(check ===  1 || check === 2) && themes" style="display: inline;" >
+              <div v-if="themes" style="display: inline;" >
                 <el-button v-for="(theme, index) in themes" :key="index" v-show="index<=max && index>=min"
                 class="group-button" :class="[colors[index], index === stageIndex ? 'selected' : null] "
                  @click="pickStage(index)" >
@@ -75,8 +29,7 @@
                 </el-pagination>
               </div>
             </div>
-
-            <div class="procedure-edit" v-if="check ===  1 || check === 2">
+            <div class="procedure-edit">
               <el-button class="procedure-edit-button" @click.native="isShow = !isShow">流程编辑</el-button>
               <div class="procedure-edit-frame" v-if="isShow">
                 <el-scrollbar>
@@ -94,12 +47,13 @@
               </div>
             </div>
           </div>
-          
+
           <el-card class="table">
             <el-table
               :data="tableData"
               style="width: 100%"
-              @selection-change="handleSelectionChange">
+              @selection-change="handleSelectionChange"
+              >
                <el-table-column
                 type="selection"
                 width="55">
@@ -167,9 +121,9 @@
               </el-pagination>
             </div>
           </el-card>
-      </div>
+    </div>
 
-      <div class="left" v-if="check === 1 || check === 2">
+      <div class="left">
         <el-button icon="el-icon-circle-plus" class="new-button" :disabled="!newState" @click="popUp = true">更新状态</el-button>
         <el-card class="new-card" v-if="popUp">
           <el-radio-group v-model="radio" @change="handleChange">
@@ -215,22 +169,22 @@
           </el-dialog>
         </div>
       </div>
-
-      
   </div>
 </template>
 
 <script>
-import { getGroupCount, getStageCount, getCandidate, getDownloadLink } from '@/api/getInfo.js'
+import Headbar from './Headbar/index.vue'
+import { getStageCount, getCandidate, getDownloadLink } from '@/api/getInfo.js'
 import { addStage, deleteStage, getTemplate, pass, finalPass, disuse } from '@/api/edit.js'
 
 export default {
   name: 'LayoutIndex',
-  components: {},
+  components: {
+    Headbar
+  },
   data() {
     return {
       currentButton: 1,
-      menuSeen: false,
       radio: '',
       checkList: [],
       inputable: false,
@@ -239,69 +193,18 @@ export default {
       total: 0,
       currentPage: 1,
       totalPages: 0,
-      check: 0,
       max: 4,
       min: 0,
       tip: '',
-      groupIndex: -1,
+      groupIndex: parseInt(this.$route.query.groupIndex),
       stage: '',
       stageIndex: -1,
       stageInput: '',
-      groups: [{
-        title: '产品组',
-        count: 0
-      },
-      {
-        title: '运营组',
-        count: 0
-      },
-      {
-        title: '设计组',
-        count: 0
-      },
-      {
-        title: '前端组',
-        count: 0
-      },
-      {
-        title: '后端组',
-        count: 0
-      },
-      {
-        title: '移动组',
-        count: 0
-      }],
-      themes: [{
-        theme: '全部',
-        count: 0
-      }],
+      themes: [],
       grades: ['大一','大二','大三','大四','研一','研二','研三','其他'],
       colors: ['color1', 'color2', 'color3', 'color4', 'color5', 'color6'],
-      time: ['2021', 'Autumn'],
+      time: this.$store.state.time,
       tableData:[],
-      // years: [{
-      //   label: '2021'
-      // },
-      // {
-      //   label: '2022'
-      // },
-      // {
-      //   label: '2023'
-      // },
-      // {
-      //   label: '2024'
-      // },
-      // {
-      //   label: '2025'
-      // },
-      // {
-      //   label: '2026'
-      // },
-      // {
-      //   label: '2027'
-      // }],
-      // season: ['Spring', 'Autumn'],
-      stages: ['简历', '笔试', '群面', '单面', '通过'],
       isShow: false,
       popUp: false,
       textUp: false,
@@ -312,69 +215,18 @@ export default {
       qq_input: '',
       loading: false,
       submitable: true,
-      years: ['-','2021','2022','2023','2024','2025','2026','2027','2028','2029','-'],
-      seasons: ['Spring','Autumn'],
-      minY: 0,
-      maxY: 5
     }
   },
   methods: {
-    // 下拉菜单的滚动
-    RollTime(i) {
-      if(i === this.minY ) {
-        if(this.minY >= 1) {
-          setTimeout(()=> {
-            this.minY--;
-            this.maxY--;
-          },700)
-        }
-      } else if(i === this.maxY) {
-        if(this.maxY <= this.years.length-2) {
-          setTimeout(()=> {
-            this.minY++;
-            this.maxY++;
-          },700)
-        }
-      }
-    },
-    // 切换时间
-    ChangeTime(i, index) {
-      this.time[0] = this.years[i];
-      this.time[1] = this.seasons[index];
-      this.backtoHome();
-      this.menuSeen = false;
-    },
-    // 切换时间
-    // handleSelect(index, indexPath) {
-
-    //   this.check = 0;
-    //   this.tip = '';
-    //   this.groupIndex = -1;
-    //   this.stage = '';
-    //   this.stageIndex = -1;
-      
-    //   this.time[0] = indexPath[1];
-    //   this.time[1] = indexPath[2];
-    //   this.getGroupInfo();
-    //   this.getCandidateInfo(this.groupIndex, 0, this.stage)
-    // },
-    // 切换到对应组别下的流程
-    getStage(i) {
-      this.check = 1;
-      // console.log(i);
-      this.groupIndex = i+1;
-      this.getCandidateInfo(this.groupIndex, 0, this.stage);     
-      this.getStageInfo(this.groupIndex);
-      this.tip = this.groups[i].title; 
-    },
-    // 切换到对应流程
-    pickStage(index) {
-      this.check = 2;
-      console.log(index);
-      this.currentPage = 1;
-      this.stageIndex = index;
-      this.stage = this.themes[this.stageIndex].theme;
-      this.getCandidateInfo(this.groupIndex, 0, this.stage);
+    changeTime() {
+      this.time = this.$store.state.time;
+      this.$store.dispatch('getGroup_num', {
+        "year": this.time[0],
+        "season": this.time[1]
+      })
+      this.getCandidateInfo(this.groupIndex, 0, '')
+      this.getStageInfo(this.groupIndex)
+      this.stageIndex = -1
     },
     async downloadAll(key1,key2){
       console.log(key1,key2)
@@ -392,6 +244,87 @@ export default {
       // 不要直接给href赋值，正确做法是开个新tab下载
       window.open(url)
     },
+    // 切换候选人表单页码
+    nextPage() {
+      this.currentPage++;
+      this.getCandidateInfo(this.groupIndex, 10*(this.currentPage-1), this.stage);
+    },
+    prePage() {
+      this.currentPage--;
+      this.getCandidateInfo(this.groupIndex, 10*(this.currentPage-1), this.stage);
+    },
+    // 获取各阶段及人数
+    getStageInfo(index) {
+      let group = {
+        "year": this.time[0],
+        "season": this.time[1],
+        "group": index
+      }
+      getStageCount(group).then((res) => {
+        this.themes = res.data.msg
+      }).catch((err) => {
+        console.log(err.response.data)
+      });
+    },
+    // 获得候选人信息
+    getCandidateInfo(groupIndex, pageNum, stageInfo) {
+      let params = {
+        "year": this.time[0],
+        "season": this.time[1],
+        "group": groupIndex,
+        "page_size": 10,
+        "page_num": pageNum,
+        "stage": stageInfo
+      }
+      getCandidate(params).then((res) => {
+        if(res.data.msg.length != 0) {
+          this.tableData = res.data.msg.slice(0, res.data.msg.length-1);
+          this.total = res.data.msg[res.data.msg.length-1].total;   
+        }else {
+          this.tableData = [];
+          this.total = 0;
+        }
+          this.totalPages = Math.ceil(this.total/10);
+      }).catch((err) => {
+        console.log(err);
+      });
+    },
+    // 渲染候选人表单中的年级
+    gradeCheck(row, column) {
+      return this.grades[row.grade-1]
+    },
+    // 删除流程
+    stageRemove(index) {
+      let data = {
+        "year": this.time[0],
+        "season": this.time[1],
+        "group": this.groupIndex,
+        "stage": this.themes[index].theme
+      }
+      deleteStage(data).then((res) => {
+        this.getStageInfo(this.groupIndex);
+        this.min = 0;
+        this.max = 4;
+        this.currentButton = 1;
+      }).catch((err) => {
+        console.log(err);
+      });
+
+    },
+    stageAdd() {
+      let data = {
+        "year": this.time[0],
+        "season": this.time[1],
+        "group": this.groupIndex,
+        "stage": this.stageInput
+      }
+      addStage(data).then((res) => {
+        this.getStageInfo(this.groupIndex);
+      }).catch((err) => {
+        console.log(err.response.data);
+      });
+      this.stageInput = '';
+    },
     // 流程按钮的移动
     nextItem() {
       this.max++;
@@ -403,38 +336,22 @@ export default {
       this.min--;
       this.currentButton --;
     },
-    // 切换候选人表单页码
-    nextPage() {
-      this.currentPage++;
-      this.getCandidateInfo(this.groupIndex, 10*(this.currentPage-1), this.stage);
+    // 切换到对应流程
+    pickStage(index) {
+      this.stageIndex = index;
+      this.currentPage = 1;
+      this.qq_input = ''
+      this.stage = this.themes[this.stageIndex].theme;
+      this.getCandidateInfo(this.groupIndex, 0, this.stage);
     },
-    prePage() {
-      this.currentPage--;
-      this.getCandidateInfo(this.groupIndex, 10*(this.currentPage-1), this.stage);
-    },
-    // 返回首页导航
-    backtoHome() {
-      this.check = 0;
-      this.tip = '';
-      this.groupIndex = -1;
-      this.stage = '';
-      this.stageIndex = -1;
-      this.max = 4;
-      this.min = 0;
-      this.currentButton = 1;
-      this.getGroupInfo();
-      this.getCandidateInfo(-1, 0, '');
-    },
-    // 返回分组后的首页
-    backtoGroupHome(index) {
-      // console.log(this.groupIndex);
-      this.check = 1;
+    // 返回全部
+    backtoGroupHome() {
       this.stage = '';
       this.currentPage = 1;
       this.stageIndex = -1;
       this.getCandidateInfo(this.groupIndex, 0, '');
-
     },
+    // 选中报名者
     handleSelectionChange(val) {
       if(val.length === 0){
         this.newState = false;
@@ -455,115 +372,19 @@ export default {
         this.candidateSelected_name = name;
       }
     },
-    // 获得候选人信息
-    getCandidateInfo(groupIndex, pageNum, stageInfo) {
-      let params = {
-        "year": this.time[0],
-        "season": this.time[1],
-        "group": groupIndex,
-        "page_size": 10,
-        "page_num": pageNum,
-        "stage": stageInfo
-      }
-      getCandidate(params).then((res) => {
-        // console.log('我是候选人');
-        if(res.data.msg.length != 0) {
-          // console.log(res.data.msg);
-          this.tableData = res.data.msg.slice(0, res.data.msg.length-1);
-          this.total = res.data.msg[res.data.msg.length-1].total;   
-        }else {
-          this.tableData = [];
-          this.total = 0;
-        }
-          this.totalPages = Math.ceil(this.total/10);
-      }).catch((err) => {
-        console.log(err);
-      });
-    },
-    // 渲染候选人表单中的年级
-    gradeCheck(row, column) {
-      return this.grades[row.grade-1]
-    },
-    // 获取各组别及人数
-    getGroupInfo() {
-      let time = {
-        "year": this.time[0],
-        "season": this.time[1] 
-      }
-      getGroupCount(time
-      ).then((res) => {
-        // console.log('我是组别人数');
-        // console.log(res.data.msg)
-        this.groups = res.data.msg
-      }).catch((err) => {
-        console.log(err.response.data)
-      });
-    },
-
-    // 获取各阶段及人数
-    getStageInfo(index) {
-      let group = {
-        "year": this.time[0],
-        "season": this.time[1],
-        "group": index
-      }
-      getStageCount(group).then((res) => {
-        // console.log('我是阶段人数');
-        // console.log(res)
-        this.themes = res.data.msg
-      }).catch((err) => {
-        console.log(err.response.data)
-      });
-    },
-    stageRemove(index) {
-      let data = {
-        "year": this.time[0],
-        "season": this.time[1],
-        "group": this.groupIndex,
-        "stage": this.themes[index].theme
-      }
-      // console.log(data);
-      deleteStage(data).then((res) => {
-        // console.log(res);
-        this.getStageInfo(this.groupIndex);
-        this.min = 0;
-        this.max = 4;
-        this.currentButton = 1;
-      }).catch((err) => {
-        console.log(err);
-      });
-
-    },
-    stageAdd() {
-      // console.log(this.stageInput)
-      // console.log(this.groupIndex, this.stage);
-      let data = {
-        "year": this.time[0],
-        "season": this.time[1],
-        "group": this.groupIndex,
-        "stage": this.stageInput
-      }
-      addStage(data).then((res) => {
-        this.getStageInfo(this.groupIndex);
-      }).catch((err) => {
-        console.log(err);
-      });
-      this.stageInput = '';
-    },
     // 获得短信模板
     handleChange() {
-      // console.log(this.radio);
       this.textUp = true
       getTemplate({
           'template_id': this.radio
         }).then((res) => {
-          this.text = res.data.msg.replace("{team}", this.tip)
-          if(this.check === 2 && this.stageIndex < this.themes.length && this.stageIndex > 1){
+          this.text = res.data.msg.replace("{team}", this.$store.state.group_sum[this.groupIndex-1].title)
+          if(this.stageIndex < this.themes.length && this.stageIndex > 1){
             this.text = this.text.replace("{stage}", this.themes[this.stageIndex+1].theme)
           }
         }).catch((err) => {
           console.log(err);
-        }) 
+      }) 
     },
     // 发送短信
     submit() {
@@ -583,7 +404,6 @@ export default {
             this.getStageInfo(this.groupIndex);
             this.getCandidateInfo(this.groupIndex, 0, this.stage);
           }).catch((err) => {
-            // console.log(err.response.data.msg);
             alert('短信发送失败！'+ err.response.data.msg);
             this.loading = false;
             this.submitable = true;
@@ -628,24 +448,14 @@ export default {
     }
   },
   created() {
-    this.getGroupInfo()
-    this.getCandidateInfo(-1, 0, '');
+    this.getCandidateInfo(this.groupIndex, 0, '');
+    this.getStageInfo(this.groupIndex)
   },
-  watch: {
-    check() {
-      this.currentPage = 1;
-      this.isShow = false;
-      this.popUp = false;
-      this.textUp = false;
-      this.stageInput = '';
-      this.newState = false;
-      this.candidateSelected_id = [];
-      this.candidateSelected = [];
-      this.candidates_name = [];
-      this.qq_input = '';
-      this.radio = '';
-      this.centerDialogVisible = false;
-    }
+  mounted() {
+    this.$store.dispatch('getGroup_num', {
+      "year": this.time[0],
+      "season": this.time[1]
+    })
   },
   computed: {
     text1() {
@@ -654,6 +464,9 @@ export default {
     text2() {
       return this.text.split('{qq_number}')[1]
     },
+    groupTitle() {
+      return '- ' + this.$store.state.group_sum[this.groupIndex-1].title
+    }
   }
 }
 </script>
@@ -666,110 +479,6 @@ export default {
   -webkit-user-select: none;
   -ms-user-select: none;
 }
-.drop {
-  user-select: none;
-  -moz-user-select: none;
-  -webkit-user-select: none;
-  -ms-user-select: none;
-}
-.head-bar {
-  position: relative;
-  height: 114px;
-  width: 100%;
-  border-bottom: 1px solid rgb(227, 227, 227);
-  padding: 0 !important;
-  .head-bar_left {
-    display: flex;
-    align-items: center;
-  }
-
-  img {
-    margin-top: 8px;
-    margin-left: 16px;
-  }
-  .head-bar_time {
-    display: inline;
-    border: none !important;
-    font-family: Racing Sans One;
-    font-style: normal;
-    font-weight: normal;
-    font-size: 24px;
-    line-height: 28px;
-    letter-spacing: 0.15px;
-    color: #5E6366;
-    margin-left: 16px;
-    position: relative;
-    top: 12px;
-  }
-  .el-menu.el-menu--horizontal {
-    border-bottom: none;
-    padding: 0;
-    position: relative;
-    top: 6px;
-  }
-  .el-submenu__title {
-    padding: 0 10px;
-    height: 30px !important;
-    line-height: 30px !important;
-  }
-  // .el-input__icon {
-  //   color: #5E6366;
-  // }
-  .location {
-    position: absolute;
-    bottom: 3px;
-    left: 35px;
-    .location-back {
-      border: none;
-      background: none;
-      font-size: 16px;
-    }
-    // .location-back:hover {
-    //   color: rgba(0, 122, 255, 0.5);
-    // }
-    p {
-      font-family: Segoe UI;
-      font-style: normal;
-      font-weight: normal;
-      font-size: 16px;
-      color: #757575;
-      display: inline;
-      letter-spacing: 0.02em;
-      margin-left: -5px;
-    }
-  }
-
-}
-.el-menu--popup {
-  min-width: 58px !important;
-  // height: 151px !important;
-  .el-icon-arrow-right {
-    display: none !important;
-  }
-}
-
-.el-submenu .el-menu-item {
-  min-width: 100px !important;
-}
-// .el-submenu__title:hover {
-//   color: rgba(0, 122, 255, 0.12) !important;
-// }
-.el-menu--horizontal>.el-submenu.is-active .el-submenu__title {
-  border-bottom: none !important;
-}
-.el-submenu.is-active .el-submenu__title {
-  border-bottom: none !important;
-}
-// .el-cascader-menu {
-//   min-width: 58px !important;
-//   color: #000000 !important;
-//   font-family: Roboto;
-//   font-style: normal;
-//   font-weight: normal;
-//   font-size: 12px;
-//   line-height: 14px;
-// }
-
 .main {
   position: relative;
   left: 350px;
@@ -1128,78 +837,5 @@ export default {
 }
 .selected {
   background: rgba(0, 153, 250, 0.152344) !important;
-}
-// .drop-btn {
-//   margin-left: 10px !important;
-//   padding: 0 !important;
-//   margin-top: 10px !important;
-//   color: #9a9b9c !important;
-// }
-// .drop-btn:hover {
-//   transform: rotate(180deg);
-// }
-.drop {
-  position: relative;
-  margin-left: 10px;
-  z-index: 1000;
-  .drop-btn {
-    padding: 0 !important;
-    margin-top: 15px !important;
-    color: #9a9b9c !important;
-
-  }
-  .drop-btn:hover {
-    transform: rotate(180deg);
-  }
-  .drop-menu {
-    position: absolute;
-    // left: 240px;
-    // top: 45px;
-    // z-index: 1000;
-    ul {
-      list-style: none;
-      background: #fff;
-      width: 58px;
-      padding: 0 !important;
-      text-align: center;
-      box-shadow: 4px 4px 15px rgba(0, 0, 0, 0.25);
-      border-radius: 5px;
-    }
-    li {
-      cursor: pointer;
-      font-family: Roboto;
-      font-style: normal;
-      font-weight: normal;
-      font-size: 12px;
-      line-height: 25px;
-      color: #000000;
-    }
-    li:hover {
-      background-color: #ECF0FF;
-    }
-    .submenu2 {
-      display: none;
-      z-index: 10000;
-      position: absolute;
-      margin-left: 55px;
-      margin-top: -20px;
-      background: #fff;
-      width: 102px;
-      box-shadow: 0px 4px 15px rgba(0, 0, 0, 0.25);
-    }
-    .submenu1 li:hover .submenu2 {
-      display: block;
-    }
-    .navi {
-      font-size: 12px;
-      transform: scale(.9);
-      color: #6E7073;
-      cursor: default;
-      background: #fff !important;
-    }
-    .navi .submenu2 {
-      display: none !important;
-    }
-  }
 }
 </style>
