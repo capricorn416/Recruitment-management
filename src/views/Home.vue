@@ -6,10 +6,21 @@
           <!-- 所有候选人 -->
           <div>
             <el-button v-for="(group, i) in $store.state.group_sum" :key="i"
+             v-show="i<=max && i>=min"
              class="group-button" :class="colors[i]" @click="getStage(i)">
               <h2>{{ group.title }}</h2>
               <p>{{ group.count }}</p>
             </el-button>
+                <el-pagination
+                  v-if="$store.state.group_sum.length > 6"
+                  layout="prev, next"
+                  class="procedure-switch"
+                  @next-click="nextItem"
+                  @prev-click="preItem"
+                  :page-count="$store.state.group_sum.length-5"
+                  :current-page="currentButton"
+                >
+                </el-pagination>
           </div>
 
           <el-card class="table">
@@ -109,7 +120,10 @@ export default {
       grades: ['大一','大二','大三','大四','研一','研二','研三','其他'],
       colors: ['color1', 'color2', 'color3', 'color4', 'color5', 'color6'],
       time: this.$store.state.time,
-      tableData:[]
+      tableData:[],
+      max: 5,
+      min: 0,
+      currentButton: 1,
     }
   },
   methods: {
@@ -177,7 +191,18 @@ export default {
     // 渲染候选人表单中的年级
     gradeCheck(row, column) {
       return this.grades[row.grade-1]
-    }
+    },
+    // 流程按钮的移动
+    nextItem() {
+      this.max++;
+      this.min++;
+      this.currentButton ++;
+    },
+    preItem() {
+      this.max--;
+      this.min--;
+      this.currentButton --;
+    },
   },
   created() {
     this.getCandidateInfo(-1, 0, '');
@@ -197,6 +222,9 @@ export default {
 </script>
 
 <style scoped lang="less">
+.main .procedure-switch {
+  top: 90px;
+}
 .color1 p {
   color: red;
 }
