@@ -23,6 +23,9 @@ const store = new Vuex.Store({
     },{
       title: '移动组',
       count: 0
+    },{
+      title: '游戏组',
+      count: 0
     }],
     time: ['2021', 'Autumn']
   },
