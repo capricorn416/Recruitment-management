@@ -3,6 +3,10 @@ import Vue from 'vue'
 import { getGroupCount } from '@/api/getInfo.js'
 Vue.use(Vuex)
 
+let year = new Date().getFullYear()
+let month = new Date().getMonth()
+let season = month+1 < 6 ? 'Spring' : 'Autumn'
+
 const store = new Vuex.Store({
   state: {
     group_sum: [{
@@ -27,7 +31,7 @@ const store = new Vuex.Store({
       title: '游戏组',
       count: 0
     }],
-    time: ['2021', 'Autumn']
+    time: [year, season]
   },
   mutations: {
     updateGroup_num(state, val) {
