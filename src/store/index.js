@@ -31,7 +31,7 @@ const store = new Vuex.Store({
       title: '游戏组',
       count: 0
     }],
-    time: [year, season]
+    time: [year+'', season]
   },
   mutations: {
     updateGroup_num(state, val) {

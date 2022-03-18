@@ -360,7 +360,7 @@ export default {
     },
     stageAdd() {
       let data = {
-        year: this.time[0] + "",
+        year: this.time[0],
         season: this.time[1],
         group: this.groupIndex,
         stage: this.stageInput,
