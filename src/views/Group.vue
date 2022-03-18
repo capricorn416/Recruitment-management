@@ -368,7 +368,6 @@ export default {
       addStage(data)
         .then((res) => {
           this.getStageInfo(this.groupIndex);
-          console.log("add", res);
         })
         .catch((err) => {
           console.log(err.response.data);
