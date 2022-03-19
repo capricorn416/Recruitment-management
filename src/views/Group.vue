@@ -59,6 +59,7 @@
                   {{ theme.theme }}
                   <i
                     class="el-icon-remove-outline remove-button"
+                    v-show="index > 1"
                     @click="stageRemove(index)"
                   ></i>
                 </li>
@@ -304,7 +305,7 @@ export default {
       getStageCount(group)
         .then((res) => {
           this.themes = res.data.msg;
-          console.log(this.themes);
+          // console.log(this.themes);
         })
         .catch((err) => {
           console.log(err.response.data);
